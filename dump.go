@@ -1,10 +1,11 @@
 package main
 
 import (
-	"errors"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 
@@ -13,12 +14,21 @@ import (
 	"github.com/mitchellh/cli"
 )
 
+var cfnResourceRegexp *regexp.Regexp
+
+func init() {
+	cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
+}
+
 type DumpCommand struct {
-	Ui cli.Ui
+	Ui           cli.Ui
+	accountAlias string
 }
 
 func (c *DumpCommand) Run(args []string) int {
+	var dir string
 	flagSet := flag.NewFlagSet("dump", flag.ContinueOnError)
+	flagSet.StringVar(&dir, "dir", "", "Directory to write files to")
 	flagSet.Usage = func() { c.Ui.Output(c.Help()) }
 
 	if err := flagSet.Parse(args); err != nil {
@@ -28,43 +38,71 @@ func (c *DumpCommand) Run(args []string) int {
 
 	client := iam.New(nil)
 
-	if err := c.dumpUsers(client); err != nil {
+	aliasResp, err := client.ListAccountAliases(&iam.ListAccountAliasesInput{})
+	if err != nil {
+		c.Ui.Error(err.Error())
+		return 1
+	}
+
+	if dir == "" {
+		var err error
+		dir, err = os.Getwd()
+		if err != nil {
+			c.Ui.Error(err.Error())
+			return 1
+		}
+	}
+
+	if len(aliasResp.AccountAliases) > 0 {
+		c.accountAlias = *aliasResp.AccountAliases[0]
+	}
+
+	if err := c.dumpUsers(dir, client); err != nil {
 		c.Ui.Error(err.Error())
 		return 2
 	}
 
-	// if err := c.dumpPolicies(client); err != nil {
-	// 	c.Ui.Error(err.Error())
-	// 	return 2
-	// }
+	if err := c.dumpPolicies(dir, client); err != nil {
+		c.Ui.Error(err.Error())
+		return 2
+	}
 
-	// if err := c.dumpGroups(client); err != nil {
-	// 	c.Ui.Error(err.Error())
-	// 	return 2
-	// }
+	if err := c.dumpGroups(dir, client); err != nil {
+		c.Ui.Error(err.Error())
+		return 2
+	}
 
 	return 0
 }
 
-func (c *DumpCommand) dumpUsers(client *iam.IAM) error {
-	c.Ui.Output(fmt.Sprintf("Dumping IAM users"))
+// Gets the id out of arn:aws:iam::068566200760:user/llamas
+func (c *DumpCommand) getAccount(arn string) *Account {
+	return &Account{
+		Id:    strings.SplitN(strings.TrimPrefix(arn, "arn:aws:iam::"), ":", 2)[0],
+		Alias: c.accountAlias,
+	}
+}
+
+func (c *DumpCommand) dumpUsers(dir string, client *iam.IAM) error {
+	c.Ui.Info(fmt.Sprintf("Dumping IAM users for account "))
 
 	resp, err := client.ListUsers(&iam.ListUsersInput{})
 	if err != nil {
 		return err
 	}
 
-	var cfnUser = regexp.MustCompile(`-[A-Z0-9]{12}$`)
-
 	for _, user := range resp.Users {
-		if cfnUser.MatchString(*user.UserName) {
+		if cfnResourceRegexp.MatchString(*user.UserName) {
 			c.Ui.Info(fmt.Sprintf("Skipping CloudFormation generated user %s", *user.UserName))
 			continue
 		}
 
-		c.Ui.Info(fmt.Sprintf("Dumping user %s", *user.UserName))
+		c.Ui.Info(fmt.Sprintf("Dumping %s", *user.ARN))
 
-		u := &User{User: user}
+		u := &User{
+			UserName: *user.UserName,
+			Path:     *user.Path,
+		}
 
 		if err = populateUserGroups(u, client); err != nil {
 			return err
@@ -74,7 +112,7 @@ func (c *DumpCommand) dumpUsers(client *iam.IAM) error {
 			return err
 		}
 
-		if err = writeUser(u); err != nil {
+		if err = writeUser(dir, c.getAccount(*user.ARN), u); err != nil {
 			return err
 		}
 	}
@@ -84,7 +122,7 @@ func (c *DumpCommand) dumpUsers(client *iam.IAM) error {
 
 func populateUserGroups(user *User, client *iam.IAM) error {
 	params := &iam.ListGroupsForUserInput{
-		UserName: aws.String(*user.UserName), // Required
+		UserName: aws.String(user.UserName), // Required
 	}
 
 	user.Groups = []string{}
@@ -102,7 +140,7 @@ func populateUserGroups(user *User, client *iam.IAM) error {
 
 func populateUserPolicies(user *User, client *iam.IAM) error {
 	params := &iam.ListUserPoliciesInput{
-		UserName: aws.String(*user.UserName), // Required
+		UserName: aws.String(user.UserName), // Required
 	}
 
 	user.InlinePolicies = []*InlinePolicy{}
@@ -114,63 +152,88 @@ func populateUserPolicies(user *User, client *iam.IAM) error {
 	for _, policyName := range resp.PolicyNames {
 		policyResp, err := client.GetUserPolicy(&iam.GetUserPolicyInput{
 			PolicyName: policyName,
-			UserName:   user.UserName,
+			UserName:   aws.String(user.UserName),
 		})
 		if err != nil {
 			return err
 		}
-		decoded, err := url.QueryUnescape(*policyResp.PolicyDocument)
+
+		doc, err := unmarshalPolicy(*policyResp.PolicyDocument)
 		if err != nil {
 			return err
 		}
+
 		user.InlinePolicies = append(user.InlinePolicies, &InlinePolicy{
-			Name:     *policyName,
-			Document: decoded,
+			Name:   *policyName,
+			Policy: doc,
 		})
 	}
 
-	user.ManagedPolicies = []*AttachedPolicy{}
+	user.Policies = []string{}
 	attachedResp, err := client.ListAttachedUserPolicies(&iam.ListAttachedUserPoliciesInput{
-		UserName: user.UserName,
+		UserName: aws.String(user.UserName),
 	})
 
-	for _, policy := range attachedResp.AttachedPolicies {
-		user.ManagedPolicies = append(user.ManagedPolicies, &AttachedPolicy{
-			AttachedPolicy: policy,
-		})
+	for _, policyResp := range attachedResp.AttachedPolicies {
+		user.Policies = append(user.Policies, *policyResp.PolicyName)
 	}
 
 	return nil
 }
 
-func (c *DumpCommand) dumpPolicies(client *iam.IAM) error {
-	c.Ui.Output(fmt.Sprintf("Dumping IAM policies"))
+func (c *DumpCommand) dumpPolicies(dir string, client *iam.IAM) error {
+	c.Ui.Info(fmt.Sprintf("Dumping IAM policies"))
 
-	params := &iam.ListPoliciesInput{
+	resp, err := client.ListPolicies(&iam.ListPoliciesInput{
 		Scope:        aws.String(iam.PolicyScopeTypeLocal),
 		OnlyAttached: aws.Bool(false),
-	}
-	resp, err := client.ListPolicies(params)
+	})
 	if err != nil {
 		return err
 	}
 
-	if *resp.IsTruncated {
-		return errors.New("More than 100 policies, not implemented")
-	}
+	for _, respPolicy := range resp.Policies {
+		c.Ui.Info(fmt.Sprintf("Dumping policy %#v", *respPolicy))
 
-	for _, policy := range resp.Policies {
-		c.Ui.Info(fmt.Sprintf("Dumping policy %s", *policy.PolicyName))
-		if err = writePolicy(&Policy{Policy: policy}); err != nil {
+		respVersions, err := client.ListPolicyVersions(&iam.ListPolicyVersionsInput{
+			PolicyARN: respPolicy.ARN,
+		})
+		if err != nil {
 			return err
+		}
+
+		for _, version := range respVersions.Versions {
+			if *version.IsDefaultVersion {
+				respPolicyVersion, err := client.GetPolicyVersion(&iam.GetPolicyVersionInput{
+					PolicyARN: respPolicy.ARN,
+					VersionID: version.VersionID,
+				})
+				if err != nil {
+					return err
+				}
+				doc, err := unmarshalPolicy(*respPolicyVersion.PolicyVersion.Document)
+				if err != nil {
+					return err
+				}
+				policy := &Policy{
+					Name:         *respPolicy.PolicyName,
+					Path:         *respPolicy.Path,
+					IsAttachable: *respPolicy.IsAttachable,
+					Version:      *version.VersionID,
+					Policy:       doc,
+				}
+				if err = writePolicy(dir, c.getAccount(*respPolicy.ARN), policy); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
 	return nil
 }
 
-func (c *DumpCommand) dumpGroups(client *iam.IAM) error {
-	c.Ui.Output(fmt.Sprintf("Dumping IAM groups"))
+func (c *DumpCommand) dumpGroups(dir string, client *iam.IAM) error {
+	c.Ui.Info(fmt.Sprintf("Dumping IAM groups"))
 
 	params := &iam.ListGroupsInput{}
 	resp, err := client.ListGroups(params)
@@ -178,13 +241,17 @@ func (c *DumpCommand) dumpGroups(client *iam.IAM) error {
 		return err
 	}
 
-	if *resp.IsTruncated {
-		return errors.New("More than 100 groups, not implemented")
-	}
+	for _, groupResp := range resp.Groups {
+		c.Ui.Info(fmt.Sprintf("Dumping group %#v", *groupResp))
+		group := &Group{
+			GroupName: *groupResp.GroupName,
+		}
 
-	for _, group := range resp.Groups {
-		c.Ui.Info(fmt.Sprintf("Dumping group %s", *group.GroupName))
-		if err = writeGroup(&Group{Group: group}); err != nil {
+		if err = populateGroupPolicies(group, client); err != nil {
+			return err
+		}
+
+		if err = writeGroup(dir, c.getAccount(*groupResp.ARN), group); err != nil {
 			return err
 		}
 	}
@@ -192,14 +259,71 @@ func (c *DumpCommand) dumpGroups(client *iam.IAM) error {
 	return nil
 }
 
+func populateGroupPolicies(group *Group, client *iam.IAM) error {
+	params := &iam.ListGroupPoliciesInput{
+		GroupName: aws.String(group.GroupName), // Required
+	}
+
+	group.InlinePolicies = []*InlinePolicy{}
+	resp, err := client.ListGroupPolicies(params)
+	if err != nil {
+		return err
+	}
+
+	for _, policyName := range resp.PolicyNames {
+		policyResp, err := client.GetGroupPolicy(&iam.GetGroupPolicyInput{
+			PolicyName: policyName,
+			GroupName:  aws.String(group.GroupName),
+		})
+		if err != nil {
+			return err
+		}
+
+		doc, err := unmarshalPolicy(*policyResp.PolicyDocument)
+		if err != nil {
+			return err
+		}
+
+		group.InlinePolicies = append(group.InlinePolicies, &InlinePolicy{
+			Name:   *policyName,
+			Policy: doc,
+		})
+	}
+
+	group.Policies = []string{}
+	attachedResp, err := client.ListAttachedGroupPolicies(&iam.ListAttachedGroupPoliciesInput{
+		GroupName: aws.String(group.GroupName),
+	})
+
+	for _, policyResp := range attachedResp.AttachedPolicies {
+		group.Policies = append(group.Policies, *policyResp.PolicyName)
+	}
+
+	return nil
+}
+
+func unmarshalPolicy(encoded string) (interface{}, error) {
+	jsonBytes, err := url.QueryUnescape(encoded)
+	if err != nil {
+		return nil, err
+	}
+
+	var doc interface{}
+	if err = json.Unmarshal([]byte(jsonBytes), &doc); err != nil {
+		return nil, err
+	}
+
+	return doc, nil
+}
+
 func (c *DumpCommand) Help() string {
 	helpText := `
-Usage: iamy dump
-  Dumps users, groups and poligies to files
+Usage: iamy dump [-dir <output dir>]
+  Dumps users, groups and policies to files
 `
 	return strings.TrimSpace(helpText)
 }
 
 func (c *DumpCommand) Synopsis() string {
-	return "Dumps users, groups and poligies to files"
+	return "Dumps users, groups and policies to files"
 }

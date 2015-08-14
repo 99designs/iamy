@@ -12,9 +12,12 @@ var (
 )
 
 func main() {
-	ui := &cli.BasicUi{
-		Writer: os.Stdout,
-		Reader: os.Stdin,
+	ui := &cli.ColoredUi{
+		InfoColor: cli.UiColorCyan,
+		Ui: &cli.BasicUi{
+			Writer: os.Stdout,
+			Reader: os.Stdin,
+		},
 	}
 
 	c := cli.NewCLI("iamy", Version)
