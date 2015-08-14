@@ -1,4 +1,4 @@
-package main
+package loaddumper
 
 import (
 	"fmt"
@@ -93,4 +93,12 @@ type Role struct {
 	AssumeRolePolicyDocument interface{}     `yaml:"AssumeRolePolicyDocument"`
 	InlinePolicies           []*InlinePolicy `yaml:"InlinePolicies"`
 	Policies                 []string        `yaml:"Policies"`
+}
+
+type AccountData struct {
+	account  *Account
+	users    []*User
+	groups   []*Group
+	roles    []*Role
+	policies []*Policy
 }
