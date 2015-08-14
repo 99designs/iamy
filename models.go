@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/service/iam"
 	"gopkg.in/yaml.v2"
 )
 
@@ -20,7 +19,7 @@ func (a Account) String() string {
 }
 
 type User struct {
-	UserName       string
+	Name           string
 	Path           string
 	Groups         []string
 	InlinePolicies []*InlinePolicy
@@ -29,7 +28,7 @@ type User struct {
 
 func (u *User) MarshalYAML() (interface{}, error) {
 	m := yaml.MapSlice{
-		yaml.MapItem{"UserName", u.UserName},
+		yaml.MapItem{"Name", u.Name},
 	}
 
 	if len(u.Groups) > 0 {
@@ -48,7 +47,7 @@ func (u *User) MarshalYAML() (interface{}, error) {
 }
 
 type Group struct {
-	GroupName      string
+	Name           string
 	Path           string
 	Roles          []*Role
 	InlinePolicies []*InlinePolicy
@@ -57,7 +56,7 @@ type Group struct {
 
 func (g *Group) MarshalYAML() (interface{}, error) {
 	m := yaml.MapSlice{
-		yaml.MapItem{"GroupName", g.GroupName},
+		yaml.MapItem{"Name", g.Name},
 	}
 
 	if len(g.Roles) > 0 {
@@ -82,12 +81,16 @@ type InlinePolicy struct {
 
 type Policy struct {
 	Name         string      `yaml:"Name"`
-	Path         string      `yaml:"Path"`
+	Path         string      `yaml:"-"`
 	IsAttachable bool        `yaml:"IsAttachable"`
 	Version      string      `yaml:"Version"`
 	Policy       interface{} `yaml:"Policy"`
 }
 
 type Role struct {
-	*iam.Role
+	Name                     string          `yaml:"Name"`
+	Path                     string          `yaml:"-"`
+	AssumeRolePolicyDocument interface{}     `yaml:"AssumeRolePolicyDocument"`
+	InlinePolicies           []*InlinePolicy `yaml:"InlinePolicies"`
+	Policies                 []string        `yaml:"Policies"`
 }

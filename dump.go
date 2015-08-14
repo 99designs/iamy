@@ -72,6 +72,11 @@ func (c *DumpCommand) Run(args []string) int {
 		return 2
 	}
 
+	if err := c.dumpRoles(dir, client); err != nil {
+		c.Ui.Error(err.Error())
+		return 2
+	}
+
 	return 0
 }
 
@@ -100,8 +105,8 @@ func (c *DumpCommand) dumpUsers(dir string, client *iam.IAM) error {
 		c.Ui.Info(fmt.Sprintf("Dumping %s", *user.ARN))
 
 		u := &User{
-			UserName: *user.UserName,
-			Path:     *user.Path,
+			Name: *user.UserName,
+			Path: *user.Path,
 		}
 
 		if err = populateUserGroups(u, client); err != nil {
@@ -122,7 +127,7 @@ func (c *DumpCommand) dumpUsers(dir string, client *iam.IAM) error {
 
 func populateUserGroups(user *User, client *iam.IAM) error {
 	params := &iam.ListGroupsForUserInput{
-		UserName: aws.String(user.UserName), // Required
+		UserName: aws.String(user.Name), // Required
 	}
 
 	user.Groups = []string{}
@@ -140,7 +145,7 @@ func populateUserGroups(user *User, client *iam.IAM) error {
 
 func populateUserPolicies(user *User, client *iam.IAM) error {
 	params := &iam.ListUserPoliciesInput{
-		UserName: aws.String(user.UserName), // Required
+		UserName: aws.String(user.Name), // Required
 	}
 
 	user.InlinePolicies = []*InlinePolicy{}
@@ -152,7 +157,7 @@ func populateUserPolicies(user *User, client *iam.IAM) error {
 	for _, policyName := range resp.PolicyNames {
 		policyResp, err := client.GetUserPolicy(&iam.GetUserPolicyInput{
 			PolicyName: policyName,
-			UserName:   aws.String(user.UserName),
+			UserName:   aws.String(user.Name),
 		})
 		if err != nil {
 			return err
@@ -171,7 +176,7 @@ func populateUserPolicies(user *User, client *iam.IAM) error {
 
 	user.Policies = []string{}
 	attachedResp, err := client.ListAttachedUserPolicies(&iam.ListAttachedUserPoliciesInput{
-		UserName: aws.String(user.UserName),
+		UserName: aws.String(user.Name),
 	})
 
 	for _, policyResp := range attachedResp.AttachedPolicies {
@@ -193,6 +198,11 @@ func (c *DumpCommand) dumpPolicies(dir string, client *iam.IAM) error {
 	}
 
 	for _, respPolicy := range resp.Policies {
+		if cfnResourceRegexp.MatchString(*respPolicy.PolicyName) {
+			c.Ui.Info(fmt.Sprintf("Skipping CloudFormation generated policy %s", *respPolicy.PolicyName))
+			continue
+		}
+
 		c.Ui.Info(fmt.Sprintf("Dumping policy %s", *respPolicy.ARN))
 
 		respVersions, err := client.ListPolicyVersions(&iam.ListPolicyVersionsInput{
@@ -242,9 +252,14 @@ func (c *DumpCommand) dumpGroups(dir string, client *iam.IAM) error {
 	}
 
 	for _, groupResp := range resp.Groups {
+		if cfnResourceRegexp.MatchString(*groupResp.GroupName) {
+			c.Ui.Info(fmt.Sprintf("Skipping CloudFormation generated group %s", *groupResp.GroupName))
+			continue
+		}
+
 		c.Ui.Info(fmt.Sprintf("Dumping group %s", *groupResp.ARN))
 		group := &Group{
-			GroupName: *groupResp.GroupName,
+			Name: *groupResp.GroupName,
 		}
 
 		if err = populateGroupPolicies(group, client); err != nil {
@@ -261,7 +276,7 @@ func (c *DumpCommand) dumpGroups(dir string, client *iam.IAM) error {
 
 func populateGroupPolicies(group *Group, client *iam.IAM) error {
 	params := &iam.ListGroupPoliciesInput{
-		GroupName: aws.String(group.GroupName), // Required
+		GroupName: aws.String(group.Name),
 	}
 
 	group.InlinePolicies = []*InlinePolicy{}
@@ -273,7 +288,7 @@ func populateGroupPolicies(group *Group, client *iam.IAM) error {
 	for _, policyName := range resp.PolicyNames {
 		policyResp, err := client.GetGroupPolicy(&iam.GetGroupPolicyInput{
 			PolicyName: policyName,
-			GroupName:  aws.String(group.GroupName),
+			GroupName:  aws.String(group.Name),
 		})
 		if err != nil {
 			return err
@@ -292,7 +307,7 @@ func populateGroupPolicies(group *Group, client *iam.IAM) error {
 
 	group.Policies = []string{}
 	attachedResp, err := client.ListAttachedGroupPolicies(&iam.ListAttachedGroupPoliciesInput{
-		GroupName: aws.String(group.GroupName),
+		GroupName: aws.String(group.Name),
 	})
 
 	for _, policyResp := range attachedResp.AttachedPolicies {
@@ -314,6 +329,87 @@ func unmarshalPolicy(encoded string) (interface{}, error) {
 	}
 
 	return doc, nil
+}
+
+func (c *DumpCommand) dumpRoles(dir string, client *iam.IAM) error {
+	c.Ui.Info(fmt.Sprintf("Dumping IAM Roles"))
+
+	resp, err := client.ListRoles(&iam.ListRolesInput{})
+	if err != nil {
+		return err
+	}
+
+	for _, roleResp := range resp.Roles {
+		if cfnResourceRegexp.MatchString(*roleResp.RoleName) {
+			c.Ui.Info(fmt.Sprintf("Skipping CloudFormation generated role %s", *roleResp.RoleName))
+			continue
+		}
+
+		c.Ui.Info(fmt.Sprintf("Dumping role %s", *roleResp.ARN))
+
+		doc, err := unmarshalPolicy(*roleResp.AssumeRolePolicyDocument)
+		if err != nil {
+			return err
+		}
+
+		role := &Role{
+			Name: *roleResp.RoleName,
+			AssumeRolePolicyDocument: doc,
+		}
+
+		if err = populateRolePolicies(role, client); err != nil {
+			return err
+		}
+
+		if err = writeRole(dir, c.getAccount(*roleResp.ARN), role); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func populateRolePolicies(role *Role, client *iam.IAM) error {
+	params := &iam.ListRolePoliciesInput{
+		RoleName: aws.String(role.Name),
+	}
+
+	role.InlinePolicies = []*InlinePolicy{}
+	resp, err := client.ListRolePolicies(params)
+	if err != nil {
+		return err
+	}
+
+	for _, policyName := range resp.PolicyNames {
+		policyResp, err := client.GetRolePolicy(&iam.GetRolePolicyInput{
+			PolicyName: policyName,
+			RoleName:   aws.String(role.Name),
+		})
+		if err != nil {
+			return err
+		}
+
+		doc, err := unmarshalPolicy(*policyResp.PolicyDocument)
+		if err != nil {
+			return err
+		}
+
+		role.InlinePolicies = append(role.InlinePolicies, &InlinePolicy{
+			Name:   *policyName,
+			Policy: doc,
+		})
+	}
+
+	role.Policies = []string{}
+	attachedResp, err := client.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{
+		RoleName: aws.String(role.Name),
+	})
+
+	for _, policyResp := range attachedResp.AttachedPolicies {
+		role.Policies = append(role.Policies, *policyResp.PolicyName)
+	}
+
+	return nil
 }
 
 func (c *DumpCommand) Help() string {

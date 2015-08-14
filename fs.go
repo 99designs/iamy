@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	userPath   = "{{.Account}}/iam/user{{.User.Path}}/{{.User.UserName}}.yaml"
-	groupPath  = "{{.Account}}/iam/group{{.Group.Path}}/{{.Group.GroupName}}.yaml"
+	userPath   = "{{.Account}}/iam/user{{.User.Path}}/{{.User.Name}}.yaml"
+	groupPath  = "{{.Account}}/iam/group{{.Group.Path}}/{{.Group.Name}}.yaml"
 	policyPath = "{{.Account}}/iam/policy{{.Policy.Path}}/{{.Policy.Name}}.yaml"
+	rolePath   = "{{.Account}}/iam/role{{.Role.Path}}/{{.Role.Name}}.yaml"
 )
 
 func writeUser(dir string, a *Account, u *User) error {
@@ -47,6 +48,17 @@ func writePolicy(dir string, a *Account, p *Policy) error {
 		return err
 	}
 	return writeYamlFile(filepath.Join(dir, path), p)
+}
+
+func writeRole(dir string, a *Account, r *Role) error {
+	path, err := renderPath(rolePath, map[string]interface{}{
+		"Account": a,
+		"Role":    r,
+	})
+	if err != nil {
+		return err
+	}
+	return writeYamlFile(filepath.Join(dir, path), r)
 }
 
 func renderPath(tpl string, context map[string]interface{}) (string, error) {
