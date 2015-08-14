@@ -84,7 +84,7 @@ func (c *DumpCommand) getAccount(arn string) *Account {
 }
 
 func (c *DumpCommand) dumpUsers(dir string, client *iam.IAM) error {
-	c.Ui.Info(fmt.Sprintf("Dumping IAM users for account "))
+	c.Ui.Info(fmt.Sprintf("Dumping IAM users for account"))
 
 	resp, err := client.ListUsers(&iam.ListUsersInput{})
 	if err != nil {
@@ -193,7 +193,7 @@ func (c *DumpCommand) dumpPolicies(dir string, client *iam.IAM) error {
 	}
 
 	for _, respPolicy := range resp.Policies {
-		c.Ui.Info(fmt.Sprintf("Dumping policy %#v", *respPolicy))
+		c.Ui.Info(fmt.Sprintf("Dumping policy %s", *respPolicy.ARN))
 
 		respVersions, err := client.ListPolicyVersions(&iam.ListPolicyVersionsInput{
 			PolicyARN: respPolicy.ARN,
@@ -242,7 +242,7 @@ func (c *DumpCommand) dumpGroups(dir string, client *iam.IAM) error {
 	}
 
 	for _, groupResp := range resp.Groups {
-		c.Ui.Info(fmt.Sprintf("Dumping group %#v", *groupResp))
+		c.Ui.Info(fmt.Sprintf("Dumping group %s", *groupResp.ARN))
 		group := &Group{
 			GroupName: *groupResp.GroupName,
 		}
