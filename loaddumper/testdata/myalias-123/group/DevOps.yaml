@@ -1,0 +1,11 @@
+name: DevOps
+path: ""
+roles: []
+inlinepolicies:
+- Name: AdministratorAccess-DevOps-201106140931
+  Policy:
+    Statement:
+    - Action: '*'
+      Effect: Allow
+      Resource: '*'
+policies: []
