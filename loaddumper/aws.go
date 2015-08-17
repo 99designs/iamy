@@ -22,36 +22,36 @@ type awsLoadDumper struct {
 	client *iam.IAM
 }
 
-func (a *awsLoadDumper) Dump(*AccountData) error {
+func (a *awsLoadDumper) Dump([]AccountData) error {
 	return errors.New("Not implemented")
 }
 
-func (a *awsLoadDumper) Load() (*AccountData, error) {
+func (a *awsLoadDumper) Load() ([]AccountData, error) {
 	var err error
 
 	data := AccountData{}
 
-	if data.account, err = a.getAccount(); err != nil {
+	if data.Account, err = a.getAccount(); err != nil {
 		return nil, err
 	}
 
-	if data.users, err = a.loadUsers(); err != nil {
+	if data.Users, err = a.loadUsers(); err != nil {
 		return nil, err
 	}
 
-	if data.policies, err = a.loadPolicies(); err != nil {
+	if data.Policies, err = a.loadPolicies(); err != nil {
 		return nil, err
 	}
 
-	if data.groups, err = a.loadGroups(); err != nil {
+	if data.Groups, err = a.loadGroups(); err != nil {
 		return nil, err
 	}
 
-	if data.roles, err = a.loadRoles(); err != nil {
+	if data.Roles, err = a.loadRoles(); err != nil {
 		return nil, err
 	}
 
-	return &data, nil
+	return []AccountData{data}, nil
 }
 
 func (a *awsLoadDumper) getAccount() (*Account, error) {
@@ -78,7 +78,7 @@ func (a *awsLoadDumper) getAccount() (*Account, error) {
 	}, nil
 }
 
-func (a *awsLoadDumper) loadUsers() ([]*User, error) {
+func (a *awsLoadDumper) loadUsers() ([]User, error) {
 	log.Println("Dumping IAM users for account")
 
 	resp, err := a.client.ListUsers(&iam.ListUsersInput{})
@@ -86,7 +86,7 @@ func (a *awsLoadDumper) loadUsers() ([]*User, error) {
 		return nil, err
 	}
 
-	users := []*User{}
+	users := []User{}
 
 	for _, user := range resp.Users {
 		if cfnResourceRegexp.MatchString(*user.UserName) {
@@ -109,7 +109,7 @@ func (a *awsLoadDumper) loadUsers() ([]*User, error) {
 			return nil, err
 		}
 
-		users = append(users, &u)
+		users = append(users, u)
 	}
 
 	return users, nil
@@ -138,7 +138,7 @@ func (a *awsLoadDumper) populateUserPolicies(user *User) error {
 		UserName: aws.String(user.Name), // Required
 	}
 
-	user.InlinePolicies = []*InlinePolicy{}
+	user.InlinePolicies = []InlinePolicy{}
 	resp, err := a.client.ListUserPolicies(params)
 	if err != nil {
 		return err
@@ -158,7 +158,7 @@ func (a *awsLoadDumper) populateUserPolicies(user *User) error {
 			return err
 		}
 
-		user.InlinePolicies = append(user.InlinePolicies, &InlinePolicy{
+		user.InlinePolicies = append(user.InlinePolicies, InlinePolicy{
 			Name:   *policyName,
 			Policy: doc,
 		})
@@ -176,7 +176,7 @@ func (a *awsLoadDumper) populateUserPolicies(user *User) error {
 	return nil
 }
 
-func (a *awsLoadDumper) loadPolicies() ([]*Policy, error) {
+func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
 	log.Println("Dumping IAM policies")
 
 	resp, err := a.client.ListPolicies(&iam.ListPoliciesInput{
@@ -187,7 +187,7 @@ func (a *awsLoadDumper) loadPolicies() ([]*Policy, error) {
 		return nil, err
 	}
 
-	policies := []*Policy{}
+	policies := []Policy{}
 
 	for _, respPolicy := range resp.Policies {
 		if cfnResourceRegexp.MatchString(*respPolicy.PolicyName) {
@@ -225,7 +225,7 @@ func (a *awsLoadDumper) loadPolicies() ([]*Policy, error) {
 					Policy:       doc,
 				}
 
-				policies = append(policies, &policy)
+				policies = append(policies, policy)
 			}
 		}
 	}
@@ -233,7 +233,7 @@ func (a *awsLoadDumper) loadPolicies() ([]*Policy, error) {
 	return policies, nil
 }
 
-func (a *awsLoadDumper) loadGroups() ([]*Group, error) {
+func (a *awsLoadDumper) loadGroups() ([]Group, error) {
 	log.Println("Dumping IAM groups")
 
 	params := &iam.ListGroupsInput{}
@@ -242,7 +242,7 @@ func (a *awsLoadDumper) loadGroups() ([]*Group, error) {
 		return nil, err
 	}
 
-	groups := []*Group{}
+	groups := []Group{}
 
 	for _, groupResp := range resp.Groups {
 		if cfnResourceRegexp.MatchString(*groupResp.GroupName) {
@@ -259,7 +259,7 @@ func (a *awsLoadDumper) loadGroups() ([]*Group, error) {
 			return nil, err
 		}
 
-		groups = append(groups, &group)
+		groups = append(groups, group)
 	}
 
 	return groups, nil
@@ -270,7 +270,7 @@ func (a *awsLoadDumper) populateGroupPolicies(group *Group) error {
 		GroupName: aws.String(group.Name),
 	}
 
-	group.InlinePolicies = []*InlinePolicy{}
+	group.InlinePolicies = []InlinePolicy{}
 	resp, err := a.client.ListGroupPolicies(params)
 	if err != nil {
 		return err
@@ -290,7 +290,7 @@ func (a *awsLoadDumper) populateGroupPolicies(group *Group) error {
 			return err
 		}
 
-		group.InlinePolicies = append(group.InlinePolicies, &InlinePolicy{
+		group.InlinePolicies = append(group.InlinePolicies, InlinePolicy{
 			Name:   *policyName,
 			Policy: doc,
 		})
@@ -322,7 +322,7 @@ func unmarshalPolicy(encoded string) (interface{}, error) {
 	return doc, nil
 }
 
-func (a *awsLoadDumper) loadRoles() ([]*Role, error) {
+func (a *awsLoadDumper) loadRoles() ([]Role, error) {
 	log.Println("Dumping IAM Roles")
 
 	resp, err := a.client.ListRoles(&iam.ListRolesInput{})
@@ -330,7 +330,7 @@ func (a *awsLoadDumper) loadRoles() ([]*Role, error) {
 		return nil, err
 	}
 
-	roles := []*Role{}
+	roles := []Role{}
 
 	for _, roleResp := range resp.Roles {
 		if cfnResourceRegexp.MatchString(*roleResp.RoleName) {
@@ -354,7 +354,7 @@ func (a *awsLoadDumper) loadRoles() ([]*Role, error) {
 			return nil, err
 		}
 
-		roles = append(roles, &role)
+		roles = append(roles, role)
 	}
 
 	return roles, nil
@@ -365,7 +365,7 @@ func (a *awsLoadDumper) populateRolePolicies(role *Role) error {
 		RoleName: aws.String(role.Name),
 	}
 
-	role.InlinePolicies = []*InlinePolicy{}
+	role.InlinePolicies = []InlinePolicy{}
 	resp, err := a.client.ListRolePolicies(params)
 	if err != nil {
 		return err
@@ -385,7 +385,7 @@ func (a *awsLoadDumper) populateRolePolicies(role *Role) error {
 			return err
 		}
 
-		role.InlinePolicies = append(role.InlinePolicies, &InlinePolicy{
+		role.InlinePolicies = append(role.InlinePolicies, InlinePolicy{
 			Name:   *policyName,
 			Policy: doc,
 		})

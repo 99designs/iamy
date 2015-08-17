@@ -40,7 +40,7 @@ func (c *DumpCommand) Run(args []string) int {
 		return 3
 	}
 
-	// dump data to disk
+	// dump data to dir
 	loaddumper.Yaml.Dir = dir
 	err = loaddumper.Yaml.Dump(data)
 	if err != nil {
