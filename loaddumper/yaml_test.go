@@ -1,6 +1,7 @@
 package loaddumper
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
@@ -27,6 +28,15 @@ func readDir(path string) map[string][]byte {
 	return files
 }
 
+func newTmpDir() string {
+	testdir, err := ioutil.TempDir("", "loaddumpertest")
+	if err != nil {
+		panic(err.Error())
+	}
+	fmt.Println("Creating tmp dir", testdir)
+	return testdir
+}
+
 func TestRoundTrip(t *testing.T) {
 	d, err := os.Getwd()
 	if err != nil {
@@ -40,11 +50,7 @@ func TestRoundTrip(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	testdir, err := ioutil.TempDir("", "loaddumpertest")
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-
+	testdir := newTmpDir()
 	Yaml.Dir = testdir
 	err = Yaml.Dump(accountData)
 	if err != nil {

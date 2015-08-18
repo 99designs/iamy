@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 )
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
@@ -19,7 +20,7 @@ var Aws = awsLoadDumper{
 }
 
 type awsLoadDumper struct {
-	client *iam.IAM
+	client iamiface.IAMAPI
 }
 
 func (a *awsLoadDumper) Dump([]AccountData) error {
@@ -60,7 +61,7 @@ func (a *awsLoadDumper) getAccount() (*Account, error) {
 		return nil, err
 	}
 	// Gets the id out of arn:aws:iam::068566200760:user/llamas
-	accountid := strings.SplitN(strings.TrimPrefix(*getUserResp.User.ARN, "arn:aws:iam::"), ":", 2)[0]
+	accountid := strings.SplitN(strings.TrimPrefix(*getUserResp.User.Arn, "arn:aws:iam::"), ":", 2)[0]
 
 	aliasResp, err := a.client.ListAccountAliases(&iam.ListAccountAliasesInput{})
 	if err != nil {
@@ -94,7 +95,7 @@ func (a *awsLoadDumper) loadUsers() ([]User, error) {
 			continue
 		}
 
-		log.Printf("Dumping %s\n", *user.ARN)
+		log.Printf("Dumping %s\n", *user.Arn)
 
 		u := User{
 			Name: *user.UserName,
@@ -195,10 +196,10 @@ func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
 			continue
 		}
 
-		log.Printf("Dumping policy %s\n", *respPolicy.ARN)
+		log.Printf("Dumping policy %s\n", *respPolicy.Arn)
 
 		respVersions, err := a.client.ListPolicyVersions(&iam.ListPolicyVersionsInput{
-			PolicyARN: respPolicy.ARN,
+			PolicyArn: respPolicy.Arn,
 		})
 		if err != nil {
 			return nil, err
@@ -207,8 +208,8 @@ func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
 		for _, version := range respVersions.Versions {
 			if *version.IsDefaultVersion {
 				respPolicyVersion, err := a.client.GetPolicyVersion(&iam.GetPolicyVersionInput{
-					PolicyARN: respPolicy.ARN,
-					VersionID: version.VersionID,
+					PolicyArn: respPolicy.Arn,
+					VersionId: version.VersionId,
 				})
 				if err != nil {
 					return nil, err
@@ -221,7 +222,7 @@ func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
 					Name:         *respPolicy.PolicyName,
 					Path:         *respPolicy.Path,
 					IsAttachable: *respPolicy.IsAttachable,
-					Version:      *version.VersionID,
+					Version:      *version.VersionId,
 					Policy:       doc,
 				}
 
@@ -250,7 +251,7 @@ func (a *awsLoadDumper) loadGroups() ([]Group, error) {
 			continue
 		}
 
-		log.Printf("Dumping group %s\n", *groupResp.ARN)
+		log.Printf("Dumping group %s\n", *groupResp.Arn)
 		group := Group{
 			Name: *groupResp.GroupName,
 		}
@@ -338,7 +339,7 @@ func (a *awsLoadDumper) loadRoles() ([]Role, error) {
 			continue
 		}
 
-		log.Printf("Dumping role %s\n", *roleResp.ARN)
+		log.Printf("Dumping role %s\n", *roleResp.Arn)
 
 		doc, err := unmarshalPolicy(*roleResp.AssumeRolePolicyDocument)
 		if err != nil {
