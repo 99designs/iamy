@@ -13,7 +13,6 @@ type LoadCommand struct {
 func (c *LoadCommand) Run(args []string) int {
 	c.Ui.Error("Not implemented yet")
 	return 1
-
 }
 
 func (c *LoadCommand) Help() string {
