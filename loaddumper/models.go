@@ -2,8 +2,7 @@ package loaddumper
 
 import (
 	"fmt"
-
-	"gopkg.in/yaml.v2"
+	"strings"
 )
 
 type Account struct {
@@ -18,60 +17,32 @@ func (a Account) String() string {
 	return a.Id
 }
 
-type User struct {
-	Name           string
-	Path           string
-	Groups         []string
-	InlinePolicies []*InlinePolicy
-	Policies       []string
+func NewAccountFromString(s string) *Account {
+	parts := strings.Split(s, "-")
+	if len(parts) != 2 {
+		panic("Unexpected number of parts")
+	}
+
+	return &Account{
+		Id:    parts[1],
+		Alias: parts[0],
+	}
 }
 
-func (u *User) MarshalYAML() (interface{}, error) {
-	m := yaml.MapSlice{
-		yaml.MapItem{"Name", u.Name},
-	}
-
-	if len(u.Groups) > 0 {
-		m = append(m, yaml.MapItem{"Groups", u.Groups})
-	}
-
-	if len(u.InlinePolicies) > 0 {
-		m = append(m, yaml.MapItem{"InlinePolicies", u.InlinePolicies})
-	}
-
-	if len(u.Policies) > 0 {
-		m = append(m, yaml.MapItem{"Policies", u.Policies})
-	}
-
-	return m, nil
+type User struct {
+	Name           string         `yaml:"Name"`
+	Path           string         `yaml:"Path"`
+	Groups         []string       `yaml:"Groups"`
+	InlinePolicies []InlinePolicy `yaml:"InlinePolicies"`
+	Policies       []string       `yaml:"Policies"`
 }
 
 type Group struct {
 	Name           string
 	Path           string
-	Roles          []*Role
-	InlinePolicies []*InlinePolicy
+	Roles          []Role
+	InlinePolicies []InlinePolicy
 	Policies       []string
-}
-
-func (g *Group) MarshalYAML() (interface{}, error) {
-	m := yaml.MapSlice{
-		yaml.MapItem{"Name", g.Name},
-	}
-
-	if len(g.Roles) > 0 {
-		m = append(m, yaml.MapItem{"Roles", g.Roles})
-	}
-
-	if len(g.InlinePolicies) > 0 {
-		m = append(m, yaml.MapItem{"InlinePolicies", g.InlinePolicies})
-	}
-
-	if len(g.Policies) > 0 {
-		m = append(m, yaml.MapItem{"Policies", g.Policies})
-	}
-
-	return m, nil
 }
 
 type InlinePolicy struct {
@@ -88,17 +59,43 @@ type Policy struct {
 }
 
 type Role struct {
-	Name                     string          `yaml:"Name"`
-	Path                     string          `yaml:"-"`
-	AssumeRolePolicyDocument interface{}     `yaml:"AssumeRolePolicyDocument"`
-	InlinePolicies           []*InlinePolicy `yaml:"InlinePolicies"`
-	Policies                 []string        `yaml:"Policies"`
+	Name                     string         `yaml:"Name"`
+	Path                     string         `yaml:"-"`
+	AssumeRolePolicyDocument interface{}    `yaml:"AssumeRolePolicyDocument"`
+	InlinePolicies           []InlinePolicy `yaml:"InlinePolicies"`
+	Policies                 []string       `yaml:"Policies"`
 }
 
 type AccountData struct {
-	account  *Account
-	users    []*User
-	groups   []*Group
-	roles    []*Role
-	policies []*Policy
+	Account  *Account
+	Users    []User
+	Groups   []Group
+	Roles    []Role
+	Policies []Policy
+}
+
+func NewAccountData(account string) *AccountData {
+	return &AccountData{
+		Account:  NewAccountFromString(account),
+		Users:    []User{},
+		Groups:   []Group{},
+		Roles:    []Role{},
+		Policies: []Policy{},
+	}
+}
+
+func (a *AccountData) addUser(u User) {
+	a.Users = append(a.Users, u)
+}
+
+func (a *AccountData) addGroup(g Group) {
+	a.Groups = append(a.Groups, g)
+}
+
+func (a *AccountData) addRole(r Role) {
+	a.Roles = append(a.Roles, r)
+}
+
+func (a *AccountData) addPolicy(p Policy) {
+	a.Policies = append(a.Policies, p)
 }

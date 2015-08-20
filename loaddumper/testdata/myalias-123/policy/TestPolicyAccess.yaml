@@ -1,0 +1,38 @@
+Name: TestPolicyAccess
+IsAttachable: true
+Version: v2
+Policy:
+  Statement:
+  - Action:
+    - '*'
+    Effect: Allow
+    Resource:
+    - '*'
+    Sid: AllowAll
+  - Action:
+    - ec2:StopInstances
+    - ec2:TerminateInstances
+    - iam:*
+    Condition:
+      Bool:
+        aws:MultiFactorAuthPresent: false
+    Effect: Deny
+    Resource: '*'
+    Sid: DenyStopAndTerminateWhenMFAIsFalse
+  - Action:
+    - ec2:StopInstances
+    - ec2:TerminateInstances
+    - iam:*
+    Condition:
+      "Null":
+        aws:MultiFactorAuthPresent: true
+    Effect: Deny
+    Resource: '*'
+    Sid: DenyStopAndTerminateWhenMFAIsNotPresent
+  - Action:
+    - s3:*
+    Effect: Deny
+    Resource:
+    - arn:aws:s3:::mybucket/*
+    Sid: DenyDeleteOnCriticalBuckets
+  Version: 2012-10-17

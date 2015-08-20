@@ -1,0 +1,14 @@
+Name: billy.blogs
+Path: /foo
+Groups:
+- DevOps
+InlinePolicies:
+- Name: AdministratorAccess-billy.blogs
+  Policy:
+    Statement:
+    - Action: '*'
+      Effect: Allow
+      Resource: '*'
+    Version: 2012-10-17
+Policies:
+- AmazonEC2ReadOnlyAccess

@@ -1,0 +1,25 @@
+Name: ecsInstanceRole
+AssumeRolePolicyDocument:
+  Statement:
+  - Action: sts:AssumeRole
+    Effect: Allow
+    Principal:
+      Service: ec2.amazonaws.com
+    Sid: ""
+  Version: 2008-10-17
+InlinePolicies:
+- Name: oneClick_ecsInstanceRole_1432518085657
+  Policy:
+    Statement:
+    - Action:
+      - ecs:CreateCluster
+      - ecs:DeregisterContainerInstance
+      - ecs:DiscoverPollEndpoint
+      - ecs:Poll
+      - ecs:RegisterContainerInstance
+      - ecs:Submit*
+      Effect: Allow
+      Resource:
+      - '*'
+    Version: 2012-10-17
+Policies: []
