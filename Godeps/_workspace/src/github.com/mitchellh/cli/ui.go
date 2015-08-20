@@ -8,8 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 // Ui is an interface for interacting with the terminal, or "interface"
@@ -19,10 +17,6 @@ type Ui interface {
 	// Ask asks the user for input using the given query. The response is
 	// returned as the given string, or an error.
 	Ask(string) (string, error)
-
-	// AskSecret asks the user for input using the given query, but does not echo
-	// the keystrokes to the terminal.
-	AskSecret(string) (string, error)
 
 	// Output is called for normal standard output.
 	Output(string)
@@ -51,14 +45,6 @@ type BasicUi struct {
 }
 
 func (u *BasicUi) Ask(query string) (string, error) {
-	return u.ask(query, false)
-}
-
-func (u *BasicUi) AskSecret(query string) (string, error) {
-	return u.ask(query, true)
-}
-
-func (u *BasicUi) ask(query string, secret bool) (string, error) {
 	if _, err := fmt.Fprint(u.Writer, query+" "); err != nil {
 		return "", err
 	}
@@ -73,17 +59,8 @@ func (u *BasicUi) ask(query string, secret bool) (string, error) {
 	errCh := make(chan error, 1)
 	lineCh := make(chan string, 1)
 	go func() {
-		var line string
-		var err error
-		stdin := int(os.Stdin.Fd())
-		if secret && terminal.IsTerminal(stdin) {
-			var lineBytes []byte
-			lineBytes, err = terminal.ReadPassword(stdin)
-			line = string(lineBytes)
-		} else {
-			r := bufio.NewReader(u.Reader)
-			line, err = r.ReadString('\n')
-		}
+		r := bufio.NewReader(u.Reader)
+		line, err := r.ReadString('\n')
 		if err != nil {
 			errCh <- err
 			return
@@ -131,13 +108,12 @@ func (u *BasicUi) Warn(message string) {
 
 // PrefixedUi is an implementation of Ui that prefixes messages.
 type PrefixedUi struct {
-	AskPrefix       string
-	AskSecretPrefix string
-	OutputPrefix    string
-	InfoPrefix      string
-	ErrorPrefix     string
-	WarnPrefix      string
-	Ui              Ui
+	AskPrefix    string
+	OutputPrefix string
+	InfoPrefix   string
+	ErrorPrefix  string
+	WarnPrefix   string
+	Ui           Ui
 }
 
 func (u *PrefixedUi) Ask(query string) (string, error) {
@@ -146,14 +122,6 @@ func (u *PrefixedUi) Ask(query string) (string, error) {
 	}
 
 	return u.Ui.Ask(query)
-}
-
-func (u *PrefixedUi) AskSecret(query string) (string, error) {
-	if query != "" {
-		query = fmt.Sprintf("%s%s", u.AskSecretPrefix, query)
-	}
-
-	return u.Ui.AskSecret(query)
 }
 
 func (u *PrefixedUi) Error(message string) {

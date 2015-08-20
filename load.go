@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mitchellh/cli"
 	"github.com/99designs/iamy/loaddumper"
-	"github.com/mitchellh/cli"
 )
 
 type LoadCommand struct {

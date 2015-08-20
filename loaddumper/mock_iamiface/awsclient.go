@@ -4,9 +4,9 @@
 package mock_iamiface
 
 import (
-	service "github.com/aws/aws-sdk-go/aws/service"
-	iam "github.com/aws/aws-sdk-go/service/iam"
-	gomock "github.com/golang/mock/gomock"
+	service "github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/service"
+	iam "github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/iam"
+	gomock "github.com/99designs/iamy/Godeps/_workspace/src/github.com/golang/mock/gomock"
 )
 
 // Mock of IAMAPI interface

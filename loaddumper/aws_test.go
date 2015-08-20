@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
+	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/iam"
+	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/golang/mock/gomock"
 	"github.com/99designs/iamy/loaddumper/mock_iamiface"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/golang/mock/gomock"
 )
 
 // sample data
