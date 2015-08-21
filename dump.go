@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"os"
 	"strings"
 
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mitchellh/cli"
@@ -24,25 +23,22 @@ func (c *DumpCommand) Run(args []string) int {
 		return 1
 	}
 
-	if dir == "" {
-		var err error
-		dir, err = os.Getwd()
-		if err != nil {
-			c.Ui.Error(err.Error())
-			return 2
-		}
+	dir, err := getDirOrDefault(dir)
+	if err != nil {
+		c.Ui.Error(err.Error())
+		return 2
 	}
 
-	// load account data from AWS
-	data, err := loaddumper.Aws.Load()
+	// fetch data from AWS
+	data, err := loaddumper.Aws.Fetch()
 	if err != nil {
 		c.Ui.Error(err.Error())
 		return 3
 	}
 
-	// dump data to dir
+	// save data to dir
 	loaddumper.Yaml.Dir = dir
-	err = loaddumper.Yaml.Dump(data)
+	err = loaddumper.Yaml.Save(data)
 	if err != nil {
 		c.Ui.Error(err.Error())
 		return 4

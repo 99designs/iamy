@@ -1,10 +1,7 @@
 package loaddumper
 
 import (
-	"encoding/json"
-	"errors"
 	"log"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -23,11 +20,7 @@ type awsLoadDumper struct {
 	client iamiface.IAMAPI
 }
 
-func (a *awsLoadDumper) Dump([]AccountData) error {
-	return errors.New("Not implemented")
-}
-
-func (a *awsLoadDumper) Load() ([]AccountData, error) {
+func (a *awsLoadDumper) Fetch() ([]AccountData, error) {
 	var err error
 
 	data := AccountData{}
@@ -80,7 +73,7 @@ func (a *awsLoadDumper) getAccount() (*Account, error) {
 }
 
 func (a *awsLoadDumper) loadUsers() ([]User, error) {
-	log.Println("Dumping IAM users for account")
+	log.Println("Fetching IAM users")
 
 	resp, err := a.client.ListUsers(&iam.ListUsersInput{})
 	if err != nil {
@@ -95,7 +88,7 @@ func (a *awsLoadDumper) loadUsers() ([]User, error) {
 			continue
 		}
 
-		log.Printf("Dumping %s\n", *user.Arn)
+		log.Printf("Fetching %s\n", *user.Arn)
 
 		u := User{
 			Name: *user.UserName,
@@ -154,7 +147,7 @@ func (a *awsLoadDumper) populateUserPolicies(user *User) error {
 			return err
 		}
 
-		doc, err := unmarshalPolicy(*policyResp.PolicyDocument)
+		doc, err := NewPolicyDocumentFromEncodedJson(*policyResp.PolicyDocument)
 		if err != nil {
 			return err
 		}
@@ -178,7 +171,7 @@ func (a *awsLoadDumper) populateUserPolicies(user *User) error {
 }
 
 func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
-	log.Println("Dumping IAM policies")
+	log.Println("Fetching IAM policies")
 
 	resp, err := a.client.ListPolicies(&iam.ListPoliciesInput{
 		Scope:        aws.String(iam.PolicyScopeTypeLocal),
@@ -196,7 +189,7 @@ func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
 			continue
 		}
 
-		log.Printf("Dumping policy %s\n", *respPolicy.Arn)
+		log.Printf("Fetching policy %s\n", *respPolicy.Arn)
 
 		respVersions, err := a.client.ListPolicyVersions(&iam.ListPolicyVersionsInput{
 			PolicyArn: respPolicy.Arn,
@@ -214,7 +207,7 @@ func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
 				if err != nil {
 					return nil, err
 				}
-				doc, err := unmarshalPolicy(*respPolicyVersion.PolicyVersion.Document)
+				doc, err := NewPolicyDocumentFromEncodedJson(*respPolicyVersion.PolicyVersion.Document)
 				if err != nil {
 					return nil, err
 				}
@@ -235,7 +228,7 @@ func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
 }
 
 func (a *awsLoadDumper) loadGroups() ([]Group, error) {
-	log.Println("Dumping IAM groups")
+	log.Println("Fetching IAM groups")
 
 	params := &iam.ListGroupsInput{}
 	resp, err := a.client.ListGroups(params)
@@ -251,7 +244,7 @@ func (a *awsLoadDumper) loadGroups() ([]Group, error) {
 			continue
 		}
 
-		log.Printf("Dumping group %s\n", *groupResp.Arn)
+		log.Printf("Fetching group %s\n", *groupResp.Arn)
 		group := Group{
 			Name: *groupResp.GroupName,
 		}
@@ -286,7 +279,7 @@ func (a *awsLoadDumper) populateGroupPolicies(group *Group) error {
 			return err
 		}
 
-		doc, err := unmarshalPolicy(*policyResp.PolicyDocument)
+		doc, err := NewPolicyDocumentFromEncodedJson(*policyResp.PolicyDocument)
 		if err != nil {
 			return err
 		}
@@ -309,22 +302,8 @@ func (a *awsLoadDumper) populateGroupPolicies(group *Group) error {
 	return nil
 }
 
-func unmarshalPolicy(encoded string) (interface{}, error) {
-	jsonBytes, err := url.QueryUnescape(encoded)
-	if err != nil {
-		return nil, err
-	}
-
-	var doc interface{}
-	if err = json.Unmarshal([]byte(jsonBytes), &doc); err != nil {
-		return nil, err
-	}
-
-	return doc, nil
-}
-
 func (a *awsLoadDumper) loadRoles() ([]Role, error) {
-	log.Println("Dumping IAM Roles")
+	log.Println("Fetching IAM Roles")
 
 	resp, err := a.client.ListRoles(&iam.ListRolesInput{})
 	if err != nil {
@@ -339,9 +318,9 @@ func (a *awsLoadDumper) loadRoles() ([]Role, error) {
 			continue
 		}
 
-		log.Printf("Dumping role %s\n", *roleResp.Arn)
+		log.Printf("Fetching role %s\n", *roleResp.Arn)
 
-		doc, err := unmarshalPolicy(*roleResp.AssumeRolePolicyDocument)
+		doc, err := NewPolicyDocumentFromEncodedJson(*roleResp.AssumeRolePolicyDocument)
 		if err != nil {
 			return nil, err
 		}
@@ -381,7 +360,7 @@ func (a *awsLoadDumper) populateRolePolicies(role *Role) error {
 			return err
 		}
 
-		doc, err := unmarshalPolicy(*policyResp.PolicyDocument)
+		doc, err := NewPolicyDocumentFromEncodedJson(*policyResp.PolicyDocument)
 		if err != nil {
 			return err
 		}

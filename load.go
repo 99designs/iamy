@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mitchellh/cli"
@@ -11,6 +12,22 @@ import (
 
 type LoadCommand struct {
 	Ui cli.Ui
+}
+
+func getDirOrDefault(dir string) (string, error) {
+	if dir == "" {
+		var err error
+		dir, err = os.Getwd()
+		if err != nil {
+			return "", err
+		}
+	}
+	dir, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Clean(dir), nil
 }
 
 func (c *LoadCommand) Run(args []string) int {
@@ -24,27 +41,34 @@ func (c *LoadCommand) Run(args []string) int {
 		return 1
 	}
 
-	if dir == "" {
-		var err error
-		dir, err = os.Getwd()
-		if err != nil {
-			c.Ui.Error(err.Error())
-			return 2
-		}
+	dir, err := getDirOrDefault(dir)
+	if err != nil {
+		c.Ui.Error(err.Error())
+		return 2
 	}
 
-	// load yaml from dir
+	// load data from yaml
 	loaddumper.Yaml.Dir = dir
-	_, err := loaddumper.Yaml.Load()
+	dataFromYaml, err := loaddumper.Yaml.Load()
+	if err != nil {
+		c.Ui.Error(err.Error())
+		return 3
+	}
+
+	// roundtrip
+	// loaddumper.Yaml.Dump(dataFromYaml)
+
+	// load data from AWS
+	dataFromAws, err := loaddumper.Aws.Fetch()
 	if err != nil {
 		c.Ui.Error(err.Error())
 		return 4
 	}
 
-	// roundtrip
-	// loaddumper.Yaml.Dump(data)
+	awsCmds := loaddumper.AwsCliCmdsForSync(dataFromAws[0], dataFromYaml[0])
+	c.Ui.Info(strings.Join(awsCmds, "\n"))
 
-	return 1
+	return 0
 }
 
 func (c *LoadCommand) Help() string {

@@ -3,11 +3,11 @@ package loaddumper
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 )
-import "os"
 
 func readDir(path string) map[string][]byte {
 	files := map[string][]byte{}

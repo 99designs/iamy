@@ -1,9 +1,48 @@
 package loaddumper
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"strings"
+	"net/url"
+	"regexp"
+
+	"github.com/99designs/iamy/loaddumper/yamljsonmap"
 )
+
+type PolicyDocument yamljsonmap.StringKeyMap
+
+func (p *PolicyDocument) Encode() string {
+	return url.QueryEscape(string(p.json()))
+}
+
+func (p PolicyDocument) json() []byte {
+	jsonBytes, err := json.Marshal(yamljsonmap.StringKeyMap(p))
+	if err != nil {
+		panic(err.Error())
+	}
+	return jsonBytes
+}
+
+func (p *PolicyDocument) JsonString() string {
+	var out bytes.Buffer
+	json.Indent(&out, p.json(), "", "  ")
+	return out.String()
+}
+
+func NewPolicyDocumentFromEncodedJson(encoded string) (PolicyDocument, error) {
+	jsonString, err := url.QueryUnescape(encoded)
+	if err != nil {
+		return nil, err
+	}
+
+	var doc PolicyDocument
+	if err = json.Unmarshal([]byte(jsonString), &doc); err != nil {
+		return nil, err
+	}
+
+	return doc, nil
+}
 
 type Account struct {
 	Id    string
@@ -17,16 +56,21 @@ func (a Account) String() string {
 	return a.Id
 }
 
+var accountReg = regexp.MustCompile(`^((\w+)-)?(\d+)$`)
+
 func NewAccountFromString(s string) *Account {
-	parts := strings.Split(s, "-")
-	if len(parts) != 2 {
-		panic("Unexpected number of parts")
+	acct := Account{}
+	result := accountReg.FindAllStringSubmatch(s, -1)
+	if len(result[0]) == 4 {
+		acct.Alias = result[0][2]
+		acct.Id = result[0][3]
+	} else if len(result[0]) == 3 {
+		acct.Id = result[0][2]
+	} else {
+		panic(fmt.Sprintf("Can't create account name from %s", s))
 	}
 
-	return &Account{
-		Id:    parts[1],
-		Alias: parts[0],
-	}
+	return &acct
 }
 
 type User struct {
@@ -46,22 +90,22 @@ type Group struct {
 }
 
 type InlinePolicy struct {
-	Name   string      `yaml:"Name"`
-	Policy interface{} `yaml:"Policy"`
+	Name   string         `yaml:"Name"`
+	Policy PolicyDocument `yaml:"Policy"`
 }
 
 type Policy struct {
-	Name         string      `yaml:"Name"`
-	Path         string      `yaml:"-"`
-	IsAttachable bool        `yaml:"IsAttachable"`
-	Version      string      `yaml:"Version"`
-	Policy       interface{} `yaml:"Policy"`
+	Name         string         `yaml:"Name"`
+	Path         string         `yaml:"-"`
+	IsAttachable bool           `yaml:"IsAttachable"`
+	Version      string         `yaml:"Version"`
+	Policy       PolicyDocument `yaml:"Policy"`
 }
 
 type Role struct {
 	Name                     string         `yaml:"Name"`
 	Path                     string         `yaml:"-"`
-	AssumeRolePolicyDocument interface{}    `yaml:"AssumeRolePolicyDocument"`
+	AssumeRolePolicyDocument PolicyDocument `yaml:"AssumeRolePolicyDocument"`
 	InlinePolicies           []InlinePolicy `yaml:"InlinePolicies"`
 	Policies                 []string       `yaml:"Policies"`
 }
