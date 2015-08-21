@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mitchellh/cli"
-	"github.com/99designs/iamy/loaddumper"
+	"github.com/99designs/iamy/iamy"
 )
 
 type DumpCommand struct {
@@ -30,15 +30,15 @@ func (c *DumpCommand) Run(args []string) int {
 	}
 
 	// fetch data from AWS
-	data, err := loaddumper.Aws.Fetch()
+	data, err := iamy.Aws.Fetch()
 	if err != nil {
 		c.Ui.Error(err.Error())
 		return 3
 	}
 
-	// save data to dir
-	loaddumper.Yaml.Dir = dir
-	err = loaddumper.Yaml.Save(data)
+	// dump data to dir
+	iamy.Yaml.Dir = dir
+	err = iamy.Yaml.Dump(data)
 	if err != nil {
 		c.Ui.Error(err.Error())
 		return 4

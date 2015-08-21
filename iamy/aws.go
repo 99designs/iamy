@@ -1,4 +1,4 @@
-package loaddumper
+package iamy
 
 import (
 	"log"
@@ -12,17 +12,17 @@ import (
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 
-var Aws = awsLoadDumper{
+var Aws = awsIamFetcher{
 	client: iam.New(nil),
 }
 
-type awsLoadDumper struct {
+type awsIamFetcher struct {
 	client iamiface.IAMAPI
 }
 
-func (a *awsLoadDumper) Fetch() ([]AccountData, error) {
+func (a *awsIamFetcher) Fetch() ([]AccountData, error) {
+	log.Println("Fetching AWS IAM data")
 	var err error
-
 	data := AccountData{}
 
 	if data.Account, err = a.getAccount(); err != nil {
@@ -48,7 +48,7 @@ func (a *awsLoadDumper) Fetch() ([]AccountData, error) {
 	return []AccountData{data}, nil
 }
 
-func (a *awsLoadDumper) getAccount() (*Account, error) {
+func (a *awsIamFetcher) getAccount() (*Account, error) {
 	getUserResp, err := a.client.GetUser(&iam.GetUserInput{})
 	if err != nil {
 		return nil, err
@@ -72,8 +72,8 @@ func (a *awsLoadDumper) getAccount() (*Account, error) {
 	}, nil
 }
 
-func (a *awsLoadDumper) loadUsers() ([]User, error) {
-	log.Println("Fetching IAM users")
+func (a *awsIamFetcher) loadUsers() ([]User, error) {
+	log.Println("Fetching AWS IAM users")
 
 	resp, err := a.client.ListUsers(&iam.ListUsersInput{})
 	if err != nil {
@@ -109,7 +109,7 @@ func (a *awsLoadDumper) loadUsers() ([]User, error) {
 	return users, nil
 }
 
-func (a *awsLoadDumper) populateUserGroups(user *User) error {
+func (a *awsIamFetcher) populateUserGroups(user *User) error {
 	params := &iam.ListGroupsForUserInput{
 		UserName: aws.String(user.Name), // Required
 	}
@@ -127,7 +127,7 @@ func (a *awsLoadDumper) populateUserGroups(user *User) error {
 	return nil
 }
 
-func (a *awsLoadDumper) populateUserPolicies(user *User) error {
+func (a *awsIamFetcher) populateUserPolicies(user *User) error {
 	params := &iam.ListUserPoliciesInput{
 		UserName: aws.String(user.Name), // Required
 	}
@@ -170,8 +170,8 @@ func (a *awsLoadDumper) populateUserPolicies(user *User) error {
 	return nil
 }
 
-func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
-	log.Println("Fetching IAM policies")
+func (a *awsIamFetcher) loadPolicies() ([]Policy, error) {
+	log.Println("Fetching AWS IAM policies")
 
 	resp, err := a.client.ListPolicies(&iam.ListPoliciesInput{
 		Scope:        aws.String(iam.PolicyScopeTypeLocal),
@@ -227,8 +227,8 @@ func (a *awsLoadDumper) loadPolicies() ([]Policy, error) {
 	return policies, nil
 }
 
-func (a *awsLoadDumper) loadGroups() ([]Group, error) {
-	log.Println("Fetching IAM groups")
+func (a *awsIamFetcher) loadGroups() ([]Group, error) {
+	log.Println("Fetching AWS IAM groups")
 
 	params := &iam.ListGroupsInput{}
 	resp, err := a.client.ListGroups(params)
@@ -259,7 +259,7 @@ func (a *awsLoadDumper) loadGroups() ([]Group, error) {
 	return groups, nil
 }
 
-func (a *awsLoadDumper) populateGroupPolicies(group *Group) error {
+func (a *awsIamFetcher) populateGroupPolicies(group *Group) error {
 	params := &iam.ListGroupPoliciesInput{
 		GroupName: aws.String(group.Name),
 	}
@@ -302,8 +302,8 @@ func (a *awsLoadDumper) populateGroupPolicies(group *Group) error {
 	return nil
 }
 
-func (a *awsLoadDumper) loadRoles() ([]Role, error) {
-	log.Println("Fetching IAM Roles")
+func (a *awsIamFetcher) loadRoles() ([]Role, error) {
+	log.Println("Fetching AWS IAM Roles")
 
 	resp, err := a.client.ListRoles(&iam.ListRolesInput{})
 	if err != nil {
@@ -340,7 +340,7 @@ func (a *awsLoadDumper) loadRoles() ([]Role, error) {
 	return roles, nil
 }
 
-func (a *awsLoadDumper) populateRolePolicies(role *Role) error {
+func (a *awsIamFetcher) populateRolePolicies(role *Role) error {
 	params := &iam.ListRolePoliciesInput{
 		RoleName: aws.String(role.Name),
 	}

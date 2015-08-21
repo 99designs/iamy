@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mitchellh/cli"
-	"github.com/99designs/iamy/loaddumper"
+	"github.com/99designs/iamy/iamy"
 )
 
-type LoadCommand struct {
+type SyncCommand struct {
 	Ui cli.Ui
 }
 
@@ -30,7 +30,7 @@ func getDirOrDefault(dir string) (string, error) {
 	return filepath.Clean(dir), nil
 }
 
-func (c *LoadCommand) Run(args []string) int {
+func (c *SyncCommand) Run(args []string) int {
 	var dir string
 	flagSet := flag.NewFlagSet("dump", flag.ContinueOnError)
 	flagSet.StringVar(&dir, "dir", "", "Directory to read files from")
@@ -48,37 +48,38 @@ func (c *LoadCommand) Run(args []string) int {
 	}
 
 	// load data from yaml
-	loaddumper.Yaml.Dir = dir
-	dataFromYaml, err := loaddumper.Yaml.Load()
+	iamy.Yaml.Dir = dir
+	dataFromYaml, err := iamy.Yaml.Load()
 	if err != nil {
 		c.Ui.Error(err.Error())
 		return 3
 	}
 
 	// roundtrip
-	// loaddumper.Yaml.Dump(dataFromYaml)
+	// iamy.Yaml.Dump(dataFromYaml)
 
 	// load data from AWS
-	dataFromAws, err := loaddumper.Aws.Fetch()
+	dataFromAws, err := iamy.Aws.Fetch()
 	if err != nil {
 		c.Ui.Error(err.Error())
 		return 4
 	}
 
-	awsCmds := loaddumper.AwsCliCmdsForSync(dataFromAws[0], dataFromYaml[0])
+	// TODO: handle multiple accounts?
+	awsCmds := iamy.AwsCliCmdsForSync(dataFromAws[0], dataFromYaml[0])
 	c.Ui.Info(strings.Join(awsCmds, "\n"))
 
 	return 0
 }
 
-func (c *LoadCommand) Help() string {
+func (c *SyncCommand) Help() string {
 	helpText := `
 Usage: iamy dump [-dir <output dir>]
-  Loads users, groups and policies from yaml files and outputs commands to sync with AWS
+  Loads users, groups and policies from yaml files and generates aws cli commands to sync with AWS
 `
 	return strings.TrimSpace(helpText)
 }
 
-func (c *LoadCommand) Synopsis() string {
-	return "Loads users, groups and policies from yaml files and outputs commands to sync with AWS"
+func (c *SyncCommand) Synopsis() string {
+	return "Loads users, groups and policies from yaml files and generates aws cli commands to sync with AWS"
 }

@@ -1,4 +1,4 @@
-package loaddumper
+package iamy
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/iam"
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/golang/mock/gomock"
-	"github.com/99designs/iamy/loaddumper/mock_iamiface"
+	"github.com/99designs/iamy/iamy/mock_iamiface"
 )
 
 // sample data
@@ -46,7 +46,7 @@ var (
 	testPolicyDocument = aws.String(`{ "testkey": "TestPolicyDocument" }`)
 )
 
-func TestLoad(t *testing.T) {
+func TestFetch(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -109,7 +109,7 @@ func TestLoad(t *testing.T) {
 	Aws.client = mockClient
 
 	// test that the models that Aws.Load creates
-	data, err := Aws.Load()
+	data, err := Aws.Fetch()
 	if err != nil {
 		t.Fatal(err.Error())
 	}

@@ -1,4 +1,4 @@
-package loaddumper
+package iamy
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/99designs/iamy/loaddumper/yamljsonmap"
+	"github.com/99designs/iamy/iamy/yamljsonmap"
 )
 
 type PolicyDocument yamljsonmap.StringKeyMap

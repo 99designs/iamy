@@ -1,8 +1,7 @@
-package loaddumper
+package iamy
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -62,7 +61,7 @@ func namedMatch(r *regexp.Regexp, s string) (bool, map[string]string) {
 }
 
 func (a *YamlLoadDumper) Load() ([]AccountData, error) {
-	fmt.Println("Loading from", a.Dir)
+	log.Println("Loading YAML IAM data from", a.Dir)
 	accounts := map[string]*AccountData{}
 
 	allFiles, err := a.getFilesRecursively()
@@ -129,7 +128,8 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 	return accts, nil
 }
 
-func (f *YamlLoadDumper) Save(accounts []AccountData) error {
+func (f *YamlLoadDumper) Dump(accounts []AccountData) error {
+	log.Println("Dumping YAML IAM data to", f.Dir)
 
 	for _, accountData := range accounts {
 

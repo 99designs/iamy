@@ -11,13 +11,13 @@ Inspired by https://github.com/percolate/iamer.
 ## Usage
 
 ```bash
-$ iamy dump
-Dumping users...
-Dumping groups...
-Dumping policies...
+$ iamy dump-to-yaml
+Fetching AWS IAM data
+Dumping YAML IAM data
 
-$ iamy load
-Loading users...
-Loading groups...
-Loading policies...
+$ iamy generate-sync-cmds
+Loading YAML IAM data
+Fetching AWS IAM data
+
+aws iam create-user --user-name foo.bar
 ```

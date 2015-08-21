@@ -1,4 +1,4 @@
-package loaddumper
+package iamy
 
 import (
 	"fmt"
