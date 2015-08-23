@@ -67,7 +67,7 @@ func (c *SyncCommand) Run(args []string) int {
 
 	// TODO: handle multiple accounts?
 	awsCmds := iamy.AwsCliCmdsForSync(dataFromAws[0], dataFromYaml[0])
-	c.Ui.Info(strings.Join(awsCmds, "\n"))
+	c.Ui.Output(strings.Join(awsCmds, "\n"))
 
 	return 0
 }

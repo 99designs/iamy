@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mitchellh/cli"
+	"github.com/99designs/iamy/iamy"
 )
 
 var (
@@ -34,6 +35,8 @@ func main() {
 			}, nil
 		},
 	}
+
+	iamy.Logger = ui.Info
 
 	exitStatus, err := c.Run()
 	if err != nil {

@@ -3,7 +3,6 @@ package iamy
 import (
 	"bytes"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -61,7 +60,7 @@ func namedMatch(r *regexp.Regexp, s string) (bool, map[string]string) {
 }
 
 func (a *YamlLoadDumper) Load() ([]AccountData, error) {
-	log.Println("Loading YAML IAM data from", a.Dir)
+	verboseLog("Loading YAML IAM data from", a.Dir)
 	accounts := map[string]*AccountData{}
 
 	allFiles, err := a.getFilesRecursively()
@@ -72,7 +71,7 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 	for _, fp := range allFiles {
 
 		if matched, result := namedMatch(a.pathRegex, fp); matched {
-			log.Println("Loading", fp)
+			verboseLog("Loading", fp)
 
 			accountid := result["account"]
 			entity := result["entity"]
@@ -116,7 +115,7 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 				panic("Unexpected entity")
 			}
 		} else {
-			log.Println("Skipping", fp)
+			verboseLog("Skipping", fp)
 		}
 	}
 
@@ -129,7 +128,7 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 }
 
 func (f *YamlLoadDumper) Dump(accounts []AccountData) error {
-	log.Println("Dumping YAML IAM data to", f.Dir)
+	verboseLog("Dumping YAML IAM data to", f.Dir)
 
 	for _, accountData := range accounts {
 
