@@ -182,3 +182,20 @@ func (ad *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
 
 	return false, nil
 }
+
+func (a *Account) arn(entity interface{}) string {
+	tmpl := "arn:aws:iam::" + a.Id + ":%s%s%s"
+
+	switch t := entity.(type) {
+	case Policy:
+		return fmt.Sprintf(tmpl, "policy", t.Path, t.Name)
+	case Role:
+		return fmt.Sprintf(tmpl, "role", t.Path, t.Name)
+	case Group:
+		return fmt.Sprintf(tmpl, "group", t.Path, t.Name)
+	case User:
+		return fmt.Sprintf(tmpl, "user", t.Path, t.Name)
+	default:
+		panic("unknown type")
+	}
+}
