@@ -246,6 +246,7 @@ func (a *awsIamFetcher) loadGroups() ([]Group, error) {
 		verboseLogf("Fetching group %s\n", *groupResp.Arn)
 		group := Group{
 			Name: *groupResp.GroupName,
+			Path: *groupResp.Path,
 		}
 
 		if err = a.populateGroupPolicies(&group); err != nil {

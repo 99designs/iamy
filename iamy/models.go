@@ -82,11 +82,10 @@ type User struct {
 }
 
 type Group struct {
-	Name           string
-	Path           string
-	Roles          []Role
-	InlinePolicies []InlinePolicy
-	Policies       []string
+	Name           string         `yaml:"Name"`
+	Path           string         `yaml:"Path"`
+	InlinePolicies []InlinePolicy `yaml:"InlinePolicies"`
+	Policies       []string       `yaml:"Policies"`
 }
 
 type InlinePolicy struct {
@@ -96,7 +95,7 @@ type InlinePolicy struct {
 
 type Policy struct {
 	Name         string         `yaml:"Name"`
-	Path         string         `yaml:"-"`
+	Path         string         `yaml:"Path"`
 	IsAttachable bool           `yaml:"IsAttachable"`
 	Version      string         `yaml:"Version"`
 	Policy       PolicyDocument `yaml:"Policy"`
@@ -104,7 +103,7 @@ type Policy struct {
 
 type Role struct {
 	Name                     string         `yaml:"Name"`
-	Path                     string         `yaml:"-"`
+	Path                     string         `yaml:"Path"`
 	AssumeRolePolicyDocument PolicyDocument `yaml:"AssumeRolePolicyDocument"`
 	InlinePolicies           []InlinePolicy `yaml:"InlinePolicies"`
 	Policies                 []string       `yaml:"Policies"`
@@ -142,4 +141,44 @@ func (a *AccountData) addRole(r Role) {
 
 func (a *AccountData) addPolicy(p Policy) {
 	a.Policies = append(a.Policies, p)
+}
+
+func (ad *AccountData) FindUserByName(name, path string) (bool, *User) {
+	for _, u := range ad.Users {
+		if u.Name == name && u.Path == path {
+			return true, &u
+		}
+	}
+
+	return false, nil
+}
+
+func (ad *AccountData) FindGroupByName(name, path string) (bool, *Group) {
+	for _, g := range ad.Groups {
+		if g.Name == name && g.Path == path {
+			return true, &g
+		}
+	}
+
+	return false, nil
+}
+
+func (ad *AccountData) FindRoleByName(name, path string) (bool, *Role) {
+	for _, r := range ad.Roles {
+		if r.Name == name && r.Path == path {
+			return true, &r
+		}
+	}
+
+	return false, nil
+}
+
+func (ad *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
+	for _, p := range ad.Policies {
+		if p.Name == name && p.Path == path {
+			return true, &p
+		}
+	}
+
+	return false, nil
 }
