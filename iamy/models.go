@@ -30,6 +30,20 @@ func (p *PolicyDocument) JsonString() string {
 	return out.String()
 }
 
+func (m PolicyDocument) MarshalJSON() ([]byte, error) {
+	return json.Marshal(yamljsonmap.StringKeyMap(m))
+}
+
+func (m *PolicyDocument) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var n yamljsonmap.StringKeyMap
+	if err := unmarshal(&n); err != nil {
+		return err
+	}
+	*m = PolicyDocument(n)
+
+	return nil
+}
+
 func NewPolicyDocumentFromEncodedJson(encoded string) (PolicyDocument, error) {
 	jsonString, err := url.QueryUnescape(encoded)
 	if err != nil {
@@ -189,13 +203,21 @@ func (a *Account) arn(entity interface{}) string {
 	switch t := entity.(type) {
 	case Policy:
 		return fmt.Sprintf(tmpl, "policy", t.Path, t.Name)
+	case *Policy:
+		return fmt.Sprintf(tmpl, "policy", t.Path, t.Name)
 	case Role:
+		return fmt.Sprintf(tmpl, "role", t.Path, t.Name)
+	case *Role:
 		return fmt.Sprintf(tmpl, "role", t.Path, t.Name)
 	case Group:
 		return fmt.Sprintf(tmpl, "group", t.Path, t.Name)
+	case *Group:
+		return fmt.Sprintf(tmpl, "group", t.Path, t.Name)
 	case User:
 		return fmt.Sprintf(tmpl, "user", t.Path, t.Name)
+	case *User:
+		return fmt.Sprintf(tmpl, "user", t.Path, t.Name)
 	default:
-		panic("unknown type")
+		panic(fmt.Sprintf("unknown type %T", entity))
 	}
 }

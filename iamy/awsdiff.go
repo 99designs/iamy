@@ -57,8 +57,8 @@ func (a *awsSyncCmdGenerator) updatePolicies() {
 	for _, toPolicy := range a.to.Policies {
 		if found, fromPolicy := a.from.FindPolicyByName(toPolicy.Name, toPolicy.Path); found {
 			// Update policy
-			if !reflect.DeepEqual(fromPolicy.Policy, toPolicy.Policy) {
-				a.cmds.Addf("aws iam create-policy-version --policy-name %s --set-as-default --policy-document '%s'", toPolicy.Name, toPolicy.Path, toPolicy.Policy.JsonString())
+			if fromPolicy.Policy.JsonString() != toPolicy.Policy.JsonString() {
+				a.cmds.Addf("aws iam create-policy-version --policy-arn %s --set-as-default --policy-document '%s'", a.to.Account.arn(toPolicy), toPolicy.Policy.JsonString())
 			}
 		} else {
 			// Create policy
@@ -67,7 +67,7 @@ func (a *awsSyncCmdGenerator) updatePolicies() {
 	}
 }
 
-// setDifference is the set of elements in aa but not in bb
+// inlinePolicySetDifference is the set of elements in aa but not in bb
 func inlinePolicySetDifference(aa, bb []InlinePolicy) []InlinePolicy {
 	rr := []InlinePolicy{}
 
@@ -85,7 +85,7 @@ LoopInlinePolicies:
 	return rr
 }
 
-// setDifference is the set of elements in aa but not in bb
+// stringSetDifference is the set of elements in aa but not in bb
 func stringSetDifference(aa, bb []string) []string {
 	rr := []string{}
 
