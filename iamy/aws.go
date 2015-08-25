@@ -20,7 +20,7 @@ type awsIamFetcher struct {
 }
 
 func (a *awsIamFetcher) Fetch() ([]AccountData, error) {
-	verboseLog("Fetching AWS IAM data")
+	logPrintln("Fetching AWS IAM data")
 	var err error
 	data := AccountData{}
 
@@ -72,7 +72,7 @@ func (a *awsIamFetcher) getAccount() (*Account, error) {
 }
 
 func (a *awsIamFetcher) loadUsers() ([]User, error) {
-	verboseLog("Fetching AWS IAM users")
+	logPrintln("Fetching AWS IAM users")
 
 	resp, err := a.client.ListUsers(&iam.ListUsersInput{})
 	if err != nil {
@@ -83,11 +83,11 @@ func (a *awsIamFetcher) loadUsers() ([]User, error) {
 
 	for _, user := range resp.Users {
 		if cfnResourceRegexp.MatchString(*user.UserName) {
-			verboseLogf("Skipping CloudFormation generated user %s\n", *user.UserName)
+			logPrintf("Skipping CloudFormation generated user %s", *user.UserName)
 			continue
 		}
 
-		verboseLogf("Fetching %s\n", *user.Arn)
+		logPrintf("Fetching %s", *user.Arn)
 
 		u := User{
 			Name: *user.UserName,
@@ -170,7 +170,7 @@ func (a *awsIamFetcher) populateUserPolicies(user *User) error {
 }
 
 func (a *awsIamFetcher) loadPolicies() ([]Policy, error) {
-	verboseLog("Fetching AWS IAM policies")
+	logPrintln("Fetching AWS IAM policies")
 
 	resp, err := a.client.ListPolicies(&iam.ListPoliciesInput{
 		Scope:        aws.String(iam.PolicyScopeTypeLocal),
@@ -184,11 +184,11 @@ func (a *awsIamFetcher) loadPolicies() ([]Policy, error) {
 
 	for _, respPolicy := range resp.Policies {
 		if cfnResourceRegexp.MatchString(*respPolicy.PolicyName) {
-			verboseLogf("Skipping CloudFormation generated policy %s\n", *respPolicy.PolicyName)
+			logPrintf("Skipping CloudFormation generated policy %s", *respPolicy.PolicyName)
 			continue
 		}
 
-		verboseLogf("Fetching policy %s\n", *respPolicy.Arn)
+		logPrintf("Fetching policy %s", *respPolicy.Arn)
 
 		respVersions, err := a.client.ListPolicyVersions(&iam.ListPolicyVersionsInput{
 			PolicyArn: respPolicy.Arn,
@@ -227,7 +227,7 @@ func (a *awsIamFetcher) loadPolicies() ([]Policy, error) {
 }
 
 func (a *awsIamFetcher) loadGroups() ([]Group, error) {
-	verboseLog("Fetching AWS IAM groups")
+	logPrintln("Fetching AWS IAM groups")
 
 	params := &iam.ListGroupsInput{}
 	resp, err := a.client.ListGroups(params)
@@ -239,11 +239,11 @@ func (a *awsIamFetcher) loadGroups() ([]Group, error) {
 
 	for _, groupResp := range resp.Groups {
 		if cfnResourceRegexp.MatchString(*groupResp.GroupName) {
-			verboseLogf("Skipping CloudFormation generated group %s\n", *groupResp.GroupName)
+			logPrintf("Skipping CloudFormation generated group %s", *groupResp.GroupName)
 			continue
 		}
 
-		verboseLogf("Fetching group %s\n", *groupResp.Arn)
+		logPrintf("Fetching group %s", *groupResp.Arn)
 		group := Group{
 			Name: *groupResp.GroupName,
 			Path: *groupResp.Path,
@@ -303,7 +303,7 @@ func (a *awsIamFetcher) populateGroupPolicies(group *Group) error {
 }
 
 func (a *awsIamFetcher) loadRoles() ([]Role, error) {
-	verboseLog("Fetching AWS IAM Roles")
+	logPrintln("Fetching AWS IAM Roles")
 
 	resp, err := a.client.ListRoles(&iam.ListRolesInput{})
 	if err != nil {
@@ -314,11 +314,11 @@ func (a *awsIamFetcher) loadRoles() ([]Role, error) {
 
 	for _, roleResp := range resp.Roles {
 		if cfnResourceRegexp.MatchString(*roleResp.RoleName) {
-			verboseLogf("Skipping CloudFormation generated role %s\n", *roleResp.RoleName)
+			logPrintf("Skipping CloudFormation generated role %s", *roleResp.RoleName)
 			continue
 		}
 
-		verboseLogf("Fetching role %s\n", *roleResp.Arn)
+		logPrintf("Fetching role %s", *roleResp.Arn)
 
 		doc, err := NewPolicyDocumentFromEncodedJson(*roleResp.AssumeRolePolicyDocument)
 		if err != nil {

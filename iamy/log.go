@@ -11,10 +11,10 @@ var noLog = func(string) {}
 
 var Logger LoggerFunc = noLog
 
-func verboseLog(s ...string) {
+func logPrintln(s ...string) {
 	Logger(strings.Join(s, " "))
 }
 
-func verboseLogf(format string, a ...interface{}) {
-	verboseLog(fmt.Sprintf(format, a...))
+func logPrintf(format string, a ...interface{}) {
+	Logger(fmt.Sprintf(format, a...))
 }
