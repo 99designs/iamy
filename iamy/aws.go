@@ -327,6 +327,7 @@ func (a *awsIamFetcher) loadRoles() ([]Role, error) {
 
 		role := Role{
 			Name: *roleResp.RoleName,
+			Path: *roleResp.Path,
 			AssumeRolePolicyDocument: doc,
 		}
 
