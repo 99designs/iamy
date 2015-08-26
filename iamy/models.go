@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/99designs/iamy/iamy/yamljsonmap"
+	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mtibben/yamljsonmap"
 )
 
 type PolicyDocument yamljsonmap.StringKeyMap
@@ -90,16 +90,16 @@ func NewAccountFromString(s string) *Account {
 type User struct {
 	Name           string         `yaml:"Name"`
 	Path           string         `yaml:"Path"`
-	Groups         []string       `yaml:"Groups"`
-	InlinePolicies []InlinePolicy `yaml:"InlinePolicies"`
-	Policies       []string       `yaml:"Policies"`
+	Groups         []string       `yaml:"Groups,omitempty"`
+	InlinePolicies []InlinePolicy `yaml:"InlinePolicies,omitempty"`
+	Policies       []string       `yaml:"Policies,omitempty"`
 }
 
 type Group struct {
 	Name           string         `yaml:"Name"`
 	Path           string         `yaml:"Path"`
-	InlinePolicies []InlinePolicy `yaml:"InlinePolicies"`
-	Policies       []string       `yaml:"Policies"`
+	InlinePolicies []InlinePolicy `yaml:"InlinePolicies,omitempty"`
+	Policies       []string       `yaml:"Policies,omitempty"`
 }
 
 type InlinePolicy struct {
@@ -119,8 +119,8 @@ type Role struct {
 	Name                     string         `yaml:"Name"`
 	Path                     string         `yaml:"Path"`
 	AssumeRolePolicyDocument PolicyDocument `yaml:"AssumeRolePolicyDocument"`
-	InlinePolicies           []InlinePolicy `yaml:"InlinePolicies"`
-	Policies                 []string       `yaml:"Policies"`
+	InlinePolicies           []InlinePolicy `yaml:"InlinePolicies,omitempty"`
+	Policies                 []string       `yaml:"Policies,omitempty"`
 }
 
 type AccountData struct {

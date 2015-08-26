@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/99designs/iamy",
-	"GoVersion": "go1.4.2",
+	"GoVersion": "go1.5",
 	"Packages": [
 		"./..."
 	],
@@ -47,6 +47,10 @@
 		{
 			"ImportPath": "github.com/mitchellh/cli",
 			"Rev": "8230c3f351c1efa17429df4e771ab8dcd67ff4bd"
+		},
+		{
+			"ImportPath": "github.com/mtibben/yamljsonmap",
+			"Rev": "989f28063dd306bdc0387775ce3f4452866cfda7"
 		},
 		{
 			"ImportPath": "github.com/vaughan0/go-ini",

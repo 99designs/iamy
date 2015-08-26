@@ -114,7 +114,7 @@ func TestFetch(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	expected := `[{Account:testalias-012345678901 Users:[{Name:testuser Path:/testpath Groups:[testgroup] InlinePolicies:[{Name:testpolicy Policy:map[testkey:TestPolicyDocument]}] Policies:[testattachedpolicy]}] Groups:[{Name:testgroup Path: Roles:[] InlinePolicies:[{Name:testpolicy Policy:map[testkey:TestPolicyDocument]}] Policies:[testattachedpolicy]}] Roles:[{Name:testrole Path: AssumeRolePolicyDocument:map[testkey:TestPolicyDocument] InlinePolicies:[{Name:testpolicy Policy:map[testkey:TestPolicyDocument]}] Policies:[testattachedpolicy]}] Policies:[{Name:testpolicy Path:/testpath IsAttachable:true Version:2 Policy:map[testkey:testPolicyVersionDocument]}]}]`
+	expected := `[{Account:testalias-012345678901 Users:[{Name:testuser Path:/testpath Groups:[testgroup] InlinePolicies:[{Name:testpolicy Policy:map[testkey:TestPolicyDocument]}] Policies:[testattachedpolicy]}] Groups:[{Name:testgroup Path:/testpath InlinePolicies:[{Name:testpolicy Policy:map[testkey:TestPolicyDocument]}] Policies:[testattachedpolicy]}] Roles:[{Name:testrole Path: AssumeRolePolicyDocument:map[testkey:TestPolicyDocument] InlinePolicies:[{Name:testpolicy Policy:map[testkey:TestPolicyDocument]}] Policies:[testattachedpolicy]}] Policies:[{Name:testpolicy Path:/testpath IsAttachable:true Version:2 Policy:map[testkey:testPolicyVersionDocument]}]}]`
 	actual := fmt.Sprintf("%+v", data)
 
 	if actual != expected {
