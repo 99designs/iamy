@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,9 +56,6 @@ func (c *SyncCommand) Run(args []string) int {
 		return 3
 	}
 
-	// roundtrip
-	// iamy.Yaml.Dump(dataFromYaml)
-
 	// load data from AWS
 	dataFromAws, err := iamy.Aws.Fetch()
 	if err != nil {
@@ -65,9 +63,13 @@ func (c *SyncCommand) Run(args []string) int {
 		return 4
 	}
 
-	// TODO: handle multiple accounts?
-	awsCmds := iamy.AwsCliCmdsForSync(dataFromAws[0], dataFromYaml[0])
-	c.Ui.Output(strings.Join(awsCmds, "\n"))
+	for _, y := range dataFromYaml {
+		if y.Account.Id == dataFromAws.Account.Id {
+			c.Ui.Info(fmt.Sprintf("Generating sync commands for %s", dataFromAws.Account.String()))
+			awsCmds := iamy.AwsCliCmdsForSync(dataFromAws, &dataFromYaml[0])
+			c.Ui.Output(strings.Join(awsCmds, "\n"))
+		}
+	}
 
 	return 0
 }

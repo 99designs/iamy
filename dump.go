@@ -38,7 +38,7 @@ func (c *DumpCommand) Run(args []string) int {
 
 	// dump data to dir
 	iamy.Yaml.Dir = dir
-	err = iamy.Yaml.Dump(data)
+	err = iamy.Yaml.Dump([]iamy.AccountData{*data})
 	if err != nil {
 		c.Ui.Error(err.Error())
 		return 4

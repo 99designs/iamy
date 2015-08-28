@@ -19,7 +19,7 @@ type awsIamFetcher struct {
 	client iamiface.IAMAPI
 }
 
-func (a *awsIamFetcher) Fetch() ([]AccountData, error) {
+func (a *awsIamFetcher) Fetch() (*AccountData, error) {
 	logPrintln("Fetching AWS IAM data")
 	var err error
 	data := AccountData{}
@@ -44,7 +44,7 @@ func (a *awsIamFetcher) Fetch() ([]AccountData, error) {
 		return nil, err
 	}
 
-	return []AccountData{data}, nil
+	return &data, nil
 }
 
 func (a *awsIamFetcher) getAccount() (*Account, error) {

@@ -24,7 +24,7 @@ func path(v string) string {
 }
 
 type awsSyncCmdGenerator struct {
-	from, to AccountData
+	from, to *AccountData
 	cmds     CmdList
 }
 
@@ -259,7 +259,7 @@ func (a *awsSyncCmdGenerator) GenerateCmds() CmdList {
 	return a.cmds
 }
 
-func AwsCliCmdsForSync(from, to AccountData) CmdList {
+func AwsCliCmdsForSync(from, to *AccountData) CmdList {
 	a := awsSyncCmdGenerator{from, to, CmdList{}}
 	return a.GenerateCmds()
 }
