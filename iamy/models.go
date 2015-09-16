@@ -65,21 +65,21 @@ type Account struct {
 
 func (a Account) String() string {
 	if a.Alias != "" {
-		return fmt.Sprintf("%s-%s", a.Alias, a.Id)
+		return fmt.Sprintf("%s-%s", a.Id, a.Alias)
 	}
 	return a.Id
 }
 
-var accountReg = regexp.MustCompile(`^(([\w-]+)-)?(\d+)$`)
+var accountReg = regexp.MustCompile(`^(\d+)(-([\w-]+))?$`)
 
 func NewAccountFromString(s string) *Account {
 	acct := Account{}
 	result := accountReg.FindAllStringSubmatch(s, -1)
 	if len(result[0]) == 4 {
-		acct.Alias = result[0][2]
-		acct.Id = result[0][3]
+		acct.Alias = result[0][3]
+		acct.Id = result[0][1]
 	} else if len(result[0]) == 3 {
-		acct.Id = result[0][2]
+		acct.Id = result[0][1]
 	} else {
 		panic(fmt.Sprintf("Can't create account name from %s", s))
 	}
