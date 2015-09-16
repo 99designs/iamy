@@ -66,7 +66,7 @@ func (c *SyncCommand) Run(args []string) int {
 	for _, y := range dataFromYaml {
 		if y.Account.Id == dataFromAws.Account.Id {
 			c.Ui.Info(fmt.Sprintf("Generating sync commands for %s", dataFromAws.Account.String()))
-			awsCmds := iamy.AwsCliCmdsForSync(dataFromAws, &dataFromYaml[0])
+			awsCmds := iamy.AwsCliCmdsForSync(dataFromAws, &y)
 			c.Ui.Output(strings.Join(awsCmds, "\n"))
 		}
 	}

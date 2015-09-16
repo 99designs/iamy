@@ -197,6 +197,11 @@ func (ad *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
 	return false, nil
 }
 
+func (a *Account) arnOfType(name, entityType string) string {
+	arnTmpl := "arn:aws:iam::" + a.Id + ":%s%s%s"
+	return fmt.Sprintf(arnTmpl, entityType, "/", name)
+}
+
 func (a *Account) arn(entity interface{}) string {
 	tmpl := "arn:aws:iam::" + a.Id + ":%s%s%s"
 
@@ -218,6 +223,6 @@ func (a *Account) arn(entity interface{}) string {
 	case *User:
 		return fmt.Sprintf(tmpl, "user", t.Path, t.Name)
 	default:
-		panic(fmt.Sprintf("unknown type %T", entity))
+		panic(fmt.Sprintf("unknown type %T for %#v", entity, entity))
 	}
 }
