@@ -70,7 +70,7 @@ func (a Account) String() string {
 	return a.Id
 }
 
-var accountReg = regexp.MustCompile(`^((\w+)-)?(\d+)$`)
+var accountReg = regexp.MustCompile(`^(([\w-]+)-)?(\d+)$`)
 
 func NewAccountFromString(s string) *Account {
 	acct := Account{}
