@@ -167,7 +167,7 @@ func (a *awsSyncCmdGenerator) updateGroups() {
 
 			// detach old managed policies
 			for _, p := range stringSetDifference(fromGroup.Policies, toGroup.Policies) {
-				a.cmds.Addf("aws iam detach-group-policy --group-name %s --policy-name %s", toGroup.Name, p)
+				a.cmds.Addf("aws iam detach-group-policy --group-name %s --policy-arn %s", toGroup.Name, a.to.Account.arnOfType(p, "policy"))
 			}
 
 			// attach new managed policies
