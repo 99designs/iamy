@@ -14,7 +14,7 @@ $ iamy dump-to-yaml
 Fetching AWS IAM data
 Dumping YAML IAM data
 
-$ cat << EOD > myaccount-123456789/users/foo.bar
+$ cat << EOD > 123456789-myaccount/users/foo.bar
 Name: foo.bar
 Path: /baz
 EOD
