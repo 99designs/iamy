@@ -211,11 +211,9 @@ func (a *awsIamFetcher) loadPolicies() ([]Policy, error) {
 					return nil, err
 				}
 				policy := Policy{
-					Name:         *respPolicy.PolicyName,
-					Path:         *respPolicy.Path,
-					IsAttachable: *respPolicy.IsAttachable,
-					Version:      *version.VersionId,
-					Policy:       doc,
+					Name:   *respPolicy.PolicyName,
+					Path:   *respPolicy.Path,
+					Policy: doc,
 				}
 
 				policies = append(policies, policy)

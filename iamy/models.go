@@ -111,11 +111,9 @@ type InlinePolicy struct {
 }
 
 type Policy struct {
-	Name         string         `yaml:"Name"`
-	Path         string         `yaml:"Path"`
-	IsAttachable bool           `yaml:"IsAttachable"`
-	Version      string         `yaml:"Version"`
-	Policy       PolicyDocument `yaml:"Policy"`
+	Name   string         `yaml:"Name"`
+	Path   string         `yaml:"Path"`
+	Policy PolicyDocument `yaml:"Policy"`
 }
 
 type Role struct {
