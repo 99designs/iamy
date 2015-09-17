@@ -1,10 +1,12 @@
 package iamy
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
+	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/iam"
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/iam/iamiface"
 )
@@ -48,27 +50,91 @@ func (a *awsIamFetcher) Fetch() (*AccountData, error) {
 }
 
 func (a *awsIamFetcher) getAccount() (*Account, error) {
-	getUserResp, err := a.client.GetUser(&iam.GetUserInput{})
+	var err error
+	acct := Account{}
+
+	acct.Id, err = a.determineAccountId()
 	if err != nil {
 		return nil, err
 	}
-	// Gets the id out of arn:aws:iam::068566200760:user/llamas
-	accountid := strings.SplitN(strings.TrimPrefix(*getUserResp.User.Arn, "arn:aws:iam::"), ":", 2)[0]
 
 	aliasResp, err := a.client.ListAccountAliases(&iam.ListAccountAliasesInput{})
 	if err != nil {
 		return nil, err
 	}
-
-	accountAlias := ""
 	if len(aliasResp.AccountAliases) > 0 {
-		accountAlias = *aliasResp.AccountAliases[0]
+		acct.Alias = *aliasResp.AccountAliases[0]
 	}
 
-	return &Account{
-		Id:    accountid,
-		Alias: accountAlias,
-	}, nil
+	return &acct, nil
+}
+
+func (a *awsIamFetcher) determineAccountId() (string, error) {
+	accountid, err := a.determineAccountIdViaGetUser()
+	if err == nil {
+		return accountid, nil
+	}
+
+	accountid, err = a.determineAccountIdViaListUsers()
+	if err == nil {
+		return accountid, nil
+	}
+
+	accountid, err = determineAccountIdViaDefaultSecurityGroup()
+	if err == nil {
+		return accountid, nil
+	}
+	if err == aws.ErrMissingRegion {
+		return "", errors.New("Error determining the AWS account id - check the AWS_REGION environment variable is set")
+	}
+
+	return "", errors.New("Can't determine the AWS account id")
+}
+
+func getAccountIdFromArn(arn string) string {
+	s := strings.Split(arn, ":")
+	return s[4]
+}
+
+// see http://stackoverflow.com/a/18124234
+func (a *awsIamFetcher) determineAccountIdViaGetUser() (string, error) {
+	getUserResp, err := a.client.GetUser(&iam.GetUserInput{})
+	if err != nil {
+		return "", err
+	}
+
+	return getAccountIdFromArn(*getUserResp.User.Arn), nil
+}
+
+func (a *awsIamFetcher) determineAccountIdViaListUsers() (string, error) {
+	listUsersResp, err := a.client.ListUsers(&iam.ListUsersInput{})
+	if err != nil {
+		return "", err
+	}
+	if len(listUsersResp.Users) == 0 {
+		return "", errors.New("No users found")
+	}
+
+	return getAccountIdFromArn(*listUsersResp.Users[0].Arn), nil
+}
+
+// see http://stackoverflow.com/a/30578645
+func determineAccountIdViaDefaultSecurityGroup() (string, error) {
+	ec2Client := ec2.New(nil)
+
+	sg, err := ec2Client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
+		GroupNames: []*string{
+			aws.String("default"),
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(sg.SecurityGroups) == 0 {
+		return "", errors.New("No security groups found")
+	}
+
+	return *sg.SecurityGroups[0].OwnerId, nil
 }
 
 func (a *awsIamFetcher) loadUsers() ([]User, error) {
