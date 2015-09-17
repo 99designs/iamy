@@ -22,7 +22,7 @@ EOD
 $ iamy generate-sync-cmds
 Loading YAML IAM data
 Fetching AWS IAM data
-Generating sync commands for account myaccount-123456789
+Generating sync commands for account 123456789-myaccount
 
 aws iam create-user --user-name foo.bar --path /baz
 ```
