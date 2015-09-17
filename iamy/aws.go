@@ -18,7 +18,8 @@ var Aws = awsIamFetcher{
 }
 
 type awsIamFetcher struct {
-	client iamiface.IAMAPI
+	client  iamiface.IAMAPI
+	account *Account
 }
 
 func (a *awsIamFetcher) Fetch() (*AccountData, error) {
@@ -29,6 +30,7 @@ func (a *awsIamFetcher) Fetch() (*AccountData, error) {
 	if data.Account, err = a.getAccount(); err != nil {
 		return nil, err
 	}
+	a.account = data.Account
 
 	if data.Users, err = a.loadUsers(); err != nil {
 		return nil, err
@@ -229,7 +231,7 @@ func (a *awsIamFetcher) populateUserPolicies(user *User) error {
 	})
 
 	for _, policyResp := range attachedResp.AttachedPolicies {
-		user.Policies = append(user.Policies, *policyResp.PolicyName)
+		user.Policies = append(user.Policies, a.account.normalisePolicyArn(*policyResp.PolicyArn))
 	}
 
 	return nil
@@ -360,7 +362,7 @@ func (a *awsIamFetcher) populateGroupPolicies(group *Group) error {
 	})
 
 	for _, policyResp := range attachedResp.AttachedPolicies {
-		group.Policies = append(group.Policies, *policyResp.PolicyName)
+		group.Policies = append(group.Policies, a.account.normalisePolicyArn(*policyResp.PolicyArn))
 	}
 
 	return nil
@@ -442,7 +444,7 @@ func (a *awsIamFetcher) populateRolePolicies(role *Role) error {
 	})
 
 	for _, policyResp := range attachedResp.AttachedPolicies {
-		role.Policies = append(role.Policies, *policyResp.PolicyName)
+		role.Policies = append(role.Policies, a.account.normalisePolicyArn(*policyResp.PolicyArn))
 	}
 
 	return nil

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mtibben/yamljsonmap"
 )
@@ -220,4 +221,16 @@ func (ad *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
 
 func (a *Account) arnFor(key, path, name string) string {
 	return fmt.Sprintf("arn:aws:iam::%s:%s%s%s", a.Id, key, path, name)
+}
+
+func (a *Account) policyArnFromString(nameOrArn string) string {
+	if strings.HasPrefix(nameOrArn, "arn:") {
+		return nameOrArn
+	}
+
+	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", a.Id, nameOrArn)
+}
+
+func (a *Account) normalisePolicyArn(arn string) string {
+	return strings.TrimPrefix(arn, fmt.Sprintf("arn:aws:iam::%s:policy/", a.Id))
 }

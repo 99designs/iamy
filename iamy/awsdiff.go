@@ -3,7 +3,6 @@ package iamy
 import (
 	"fmt"
 	"reflect"
-	"strings"
 )
 
 type CmdList []string
@@ -104,14 +103,6 @@ LoopStrings:
 	return rr
 }
 
-func policyArnFromString(name string, accountid string) string {
-	if strings.HasPrefix(name, "arn:") {
-		return name
-	}
-
-	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", accountid, name)
-}
-
 func (a *awsSyncCmdGenerator) updateRoles() {
 
 	// update roles
@@ -134,12 +125,12 @@ func (a *awsSyncCmdGenerator) updateRoles() {
 
 			// detach old managed policies
 			for _, p := range stringSetDifference(fromRole.Policies, toRole.Policies) {
-				a.cmds.Addf("aws iam detach-role-policy --role-name %s --policy-arn %s", toRole.Name, policyArnFromString(p, a.to.Account.Id))
+				a.cmds.Addf("aws iam detach-role-policy --role-name %s --policy-arn %s", toRole.Name, a.to.Account.policyArnFromString(p))
 			}
 
 			// attach new managed policies
 			for _, p := range stringSetDifference(toRole.Policies, fromRole.Policies) {
-				a.cmds.Addf("aws iam attach-role-policy --role-name %s --policy-arn %s", toRole.Name, policyArnFromString(p, a.to.Account.Id))
+				a.cmds.Addf("aws iam attach-role-policy --role-name %s --policy-arn %s", toRole.Name, a.to.Account.policyArnFromString(p))
 			}
 
 		} else {
@@ -153,7 +144,7 @@ func (a *awsSyncCmdGenerator) updateRoles() {
 
 			// attach new managed policies
 			for _, p := range toRole.Policies {
-				a.cmds.Addf("aws iam attach-role-policy --role-name %s --policy-arn %s", toRole.Name, policyArnFromString(p, a.to.Account.Id))
+				a.cmds.Addf("aws iam attach-role-policy --role-name %s --policy-arn %s", toRole.Name, a.to.Account.policyArnFromString(p))
 			}
 		}
 	}
@@ -176,12 +167,12 @@ func (a *awsSyncCmdGenerator) updateGroups() {
 
 			// detach old managed policies
 			for _, p := range stringSetDifference(fromGroup.Policies, toGroup.Policies) {
-				a.cmds.Addf("aws iam detach-group-policy --group-name %s --policy-arn %s", toGroup.Name, policyArnFromString(p, a.to.Account.Id))
+				a.cmds.Addf("aws iam detach-group-policy --group-name %s --policy-arn %s", toGroup.Name, a.to.Account.policyArnFromString(p))
 			}
 
 			// attach new managed policies
 			for _, p := range stringSetDifference(toGroup.Policies, fromGroup.Policies) {
-				a.cmds.Addf("aws iam attach-group-policy --group-name %s --policy-arn %s", toGroup.Name, policyArnFromString(p, a.to.Account.Id))
+				a.cmds.Addf("aws iam attach-group-policy --group-name %s --policy-arn %s", toGroup.Name, a.to.Account.policyArnFromString(p))
 			}
 
 		} else {
@@ -193,7 +184,7 @@ func (a *awsSyncCmdGenerator) updateGroups() {
 			}
 
 			for _, p := range toGroup.Policies {
-				a.cmds.Addf("aws iam attach-group-policy --group-name %s --policy-arn %s", toGroup.Name, policyArnFromString(p, a.to.Account.Id))
+				a.cmds.Addf("aws iam attach-group-policy --group-name %s --policy-arn %s", toGroup.Name, a.to.Account.policyArnFromString(p))
 			}
 
 		}
@@ -228,12 +219,12 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 
 			// detach old managed policies
 			for _, p := range stringSetDifference(fromUser.Policies, toUser.Policies) {
-				a.cmds.Addf("aws iam detach-user-policy --user-name %s --policy-arn %s", toUser.Name, policyArnFromString(p, a.to.Account.Id))
+				a.cmds.Addf("aws iam detach-user-policy --user-name %s --policy-arn %s", toUser.Name, a.to.Account.policyArnFromString(p))
 			}
 
 			// attach new managed policies
 			for _, p := range stringSetDifference(toUser.Policies, fromUser.Policies) {
-				a.cmds.Addf("aws iam attach-user-policy --user-name %s --policy-arn %s", toUser.Name, policyArnFromString(p, a.to.Account.Id))
+				a.cmds.Addf("aws iam attach-user-policy --user-name %s --policy-arn %s", toUser.Name, a.to.Account.policyArnFromString(p))
 			}
 
 		} else {
@@ -252,7 +243,7 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 
 			// attach new managed policies
 			for _, p := range toUser.Policies {
-				a.cmds.Addf("aws iam attach-user-policy --user-name %s --policy-arn %s", toUser.Name, policyArnFromString(p, a.to.Account.Id))
+				a.cmds.Addf("aws iam attach-user-policy --user-name %s --policy-arn %s", toUser.Name, a.to.Account.policyArnFromString(p))
 			}
 		}
 	}
