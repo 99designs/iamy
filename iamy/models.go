@@ -75,7 +75,10 @@ var accountReg = regexp.MustCompile(`^(\d+)(-([\w-]+))?$`)
 func NewAccountFromString(s string) *Account {
 	acct := Account{}
 	result := accountReg.FindAllStringSubmatch(s, -1)
-	if len(result[0]) == 4 {
+
+	if len(result) == 0 {
+		panic(fmt.Sprintf("Can't create account name from %s", s))
+	} else if len(result[0]) == 4 {
 		acct.Alias = result[0][3]
 		acct.Id = result[0][1]
 	} else if len(result[0]) == 3 {
