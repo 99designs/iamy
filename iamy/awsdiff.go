@@ -3,6 +3,7 @@ package iamy
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type CmdList []string
@@ -32,7 +33,7 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 	// delete old entities
 	for _, fromPolicy := range a.from.Policies {
 		if found, _ := a.to.FindPolicyByName(fromPolicy.Name, fromPolicy.Path); !found {
-			a.cmds.Addf("aws iam delete-policy --policy-arn %s", a.to.Account.arn(fromPolicy))
+			a.cmds.Addf("aws iam delete-policy --policy-arn %s", fromPolicy.Arn(a.to.Account))
 		}
 	}
 	for _, fromRole := range a.from.Roles {
@@ -58,7 +59,7 @@ func (a *awsSyncCmdGenerator) updatePolicies() {
 		if found, fromPolicy := a.from.FindPolicyByName(toPolicy.Name, toPolicy.Path); found {
 			// Update policy
 			if fromPolicy.Policy.JsonString() != toPolicy.Policy.JsonString() {
-				a.cmds.Addf("aws iam create-policy-version --policy-arn %s --set-as-default --policy-document '%s'", a.to.Account.arn(toPolicy), toPolicy.Policy.JsonString())
+				a.cmds.Addf("aws iam create-policy-version --policy-arn %s --set-as-default --policy-document '%s'", toPolicy.Arn(a.to.Account), toPolicy.Policy.JsonString())
 			}
 		} else {
 			// Create policy
@@ -103,6 +104,14 @@ LoopStrings:
 	return rr
 }
 
+func policyArnFromString(name string, accountid string) string {
+	if strings.HasPrefix(name, "arn:") {
+		return name
+	}
+
+	return fmt.Sprintf("arn:aws:iam::%s:policy/%s", accountid, name)
+}
+
 func (a *awsSyncCmdGenerator) updateRoles() {
 
 	// update roles
@@ -125,12 +134,12 @@ func (a *awsSyncCmdGenerator) updateRoles() {
 
 			// detach old managed policies
 			for _, p := range stringSetDifference(fromRole.Policies, toRole.Policies) {
-				a.cmds.Addf("aws iam detach-role-policy --role-name %s --policy-name %s", toRole.Name, p)
+				a.cmds.Addf("aws iam detach-role-policy --role-name %s --policy-arn %s", toRole.Name, policyArnFromString(p, a.to.Account.Id))
 			}
 
 			// attach new managed policies
 			for _, p := range stringSetDifference(toRole.Policies, fromRole.Policies) {
-				a.cmds.Addf("aws iam attach-role-policy --role-name %s --policy-arn %s", toRole.Name, a.to.Account.arn(p))
+				a.cmds.Addf("aws iam attach-role-policy --role-name %s --policy-arn %s", toRole.Name, policyArnFromString(p, a.to.Account.Id))
 			}
 
 		} else {
@@ -144,7 +153,7 @@ func (a *awsSyncCmdGenerator) updateRoles() {
 
 			// attach new managed policies
 			for _, p := range toRole.Policies {
-				a.cmds.Addf("aws iam attach-role-policy --role-name %s --policy-arn %s", toRole.Name, a.to.Account.arnOfType(p, "policy"))
+				a.cmds.Addf("aws iam attach-role-policy --role-name %s --policy-arn %s", toRole.Name, policyArnFromString(p, a.to.Account.Id))
 			}
 		}
 	}
@@ -167,12 +176,12 @@ func (a *awsSyncCmdGenerator) updateGroups() {
 
 			// detach old managed policies
 			for _, p := range stringSetDifference(fromGroup.Policies, toGroup.Policies) {
-				a.cmds.Addf("aws iam detach-group-policy --group-name %s --policy-arn %s", toGroup.Name, a.to.Account.arnOfType(p, "policy"))
+				a.cmds.Addf("aws iam detach-group-policy --group-name %s --policy-arn %s", toGroup.Name, policyArnFromString(p, a.to.Account.Id))
 			}
 
 			// attach new managed policies
 			for _, p := range stringSetDifference(toGroup.Policies, fromGroup.Policies) {
-				a.cmds.Addf("aws iam attach-group-policy --group-name %s --policy-arn %s", toGroup.Name, a.to.Account.arnOfType(p, "policy"))
+				a.cmds.Addf("aws iam attach-group-policy --group-name %s --policy-arn %s", toGroup.Name, policyArnFromString(p, a.to.Account.Id))
 			}
 
 		} else {
@@ -184,7 +193,7 @@ func (a *awsSyncCmdGenerator) updateGroups() {
 			}
 
 			for _, p := range toGroup.Policies {
-				a.cmds.Addf("aws iam attach-group-policy --group-name %s --policy-arn %s", toGroup.Name, a.to.Account.arnOfType(p, "policy"))
+				a.cmds.Addf("aws iam attach-group-policy --group-name %s --policy-arn %s", toGroup.Name, policyArnFromString(p, a.to.Account.Id))
 			}
 
 		}
@@ -219,12 +228,12 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 
 			// detach old managed policies
 			for _, p := range stringSetDifference(fromUser.Policies, toUser.Policies) {
-				a.cmds.Addf("aws iam detach-user-policy --user-name %s --policy-arn %s", toUser.Name, a.to.Account.arnOfType(p, "policy"))
+				a.cmds.Addf("aws iam detach-user-policy --user-name %s --policy-arn %s", toUser.Name, policyArnFromString(p, a.to.Account.Id))
 			}
 
 			// attach new managed policies
 			for _, p := range stringSetDifference(toUser.Policies, fromUser.Policies) {
-				a.cmds.Addf("aws iam attach-user-policy --user-name %s --policy-arn %s", toUser.Name, a.to.Account.arn(p))
+				a.cmds.Addf("aws iam attach-user-policy --user-name %s --policy-arn %s", toUser.Name, policyArnFromString(p, a.to.Account.Id))
 			}
 
 		} else {
@@ -243,7 +252,7 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 
 			// attach new managed policies
 			for _, p := range toUser.Policies {
-				a.cmds.Addf("aws iam attach-user-policy --user-name %s --policy-arn %s", toUser.Name, a.to.Account.arn(p))
+				a.cmds.Addf("aws iam attach-user-policy --user-name %s --policy-arn %s", toUser.Name, policyArnFromString(p, a.to.Account.Id))
 			}
 		}
 	}

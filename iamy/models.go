@@ -90,6 +90,10 @@ func NewAccountFromString(s string) *Account {
 	return &acct
 }
 
+type AwsResource interface {
+	Arn(*Account) string
+}
+
 type User struct {
 	Name           string         `yaml:"Name"`
 	Path           string         `yaml:"Path"`
@@ -98,11 +102,19 @@ type User struct {
 	Policies       []string       `yaml:"Policies,omitempty"`
 }
 
+func (u User) Arn(a *Account) string {
+	return a.arnFor("user", u.Path, u.Name)
+}
+
 type Group struct {
 	Name           string         `yaml:"Name"`
 	Path           string         `yaml:"Path"`
 	InlinePolicies []InlinePolicy `yaml:"InlinePolicies,omitempty"`
 	Policies       []string       `yaml:"Policies,omitempty"`
+}
+
+func (g Group) Arn(a *Account) string {
+	return a.arnFor("group", g.Path, g.Name)
 }
 
 type InlinePolicy struct {
@@ -116,12 +128,20 @@ type Policy struct {
 	Policy PolicyDocument `yaml:"Policy"`
 }
 
+func (p Policy) Arn(a *Account) string {
+	return a.arnFor("policy", p.Path, p.Name)
+}
+
 type Role struct {
 	Name                     string         `yaml:"Name"`
 	Path                     string         `yaml:"Path"`
 	AssumeRolePolicyDocument PolicyDocument `yaml:"AssumeRolePolicyDocument"`
 	InlinePolicies           []InlinePolicy `yaml:"InlinePolicies,omitempty"`
 	Policies                 []string       `yaml:"Policies,omitempty"`
+}
+
+func (r Role) Arn(a *Account) string {
+	return a.arnFor("role", r.Path, r.Name)
 }
 
 type AccountData struct {
@@ -198,32 +218,6 @@ func (ad *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
 	return false, nil
 }
 
-func (a *Account) arnOfType(name, entityType string) string {
-	arnTmpl := "arn:aws:iam::" + a.Id + ":%s%s%s"
-	return fmt.Sprintf(arnTmpl, entityType, "/", name)
-}
-
-func (a *Account) arn(entity interface{}) string {
-	tmpl := "arn:aws:iam::" + a.Id + ":%s%s%s"
-
-	switch t := entity.(type) {
-	case Policy:
-		return fmt.Sprintf(tmpl, "policy", t.Path, t.Name)
-	case *Policy:
-		return fmt.Sprintf(tmpl, "policy", t.Path, t.Name)
-	case Role:
-		return fmt.Sprintf(tmpl, "role", t.Path, t.Name)
-	case *Role:
-		return fmt.Sprintf(tmpl, "role", t.Path, t.Name)
-	case Group:
-		return fmt.Sprintf(tmpl, "group", t.Path, t.Name)
-	case *Group:
-		return fmt.Sprintf(tmpl, "group", t.Path, t.Name)
-	case User:
-		return fmt.Sprintf(tmpl, "user", t.Path, t.Name)
-	case *User:
-		return fmt.Sprintf(tmpl, "user", t.Path, t.Name)
-	default:
-		panic(fmt.Sprintf("unknown type %T for %#v", entity, entity))
-	}
+func (a *Account) arnFor(key, path, name string) string {
+	return fmt.Sprintf("arn:aws:iam::%s:%s%s%s", a.Id, key, path, name)
 }
