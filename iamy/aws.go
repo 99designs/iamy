@@ -2,6 +2,7 @@ package iamy
 
 import (
 	"errors"
+	"log"
 	"regexp"
 	"strings"
 
@@ -23,7 +24,7 @@ type awsIamFetcher struct {
 }
 
 func (a *awsIamFetcher) Fetch() (*AccountData, error) {
-	logPrintln("Fetching AWS IAM data")
+	log.Println("Fetching AWS IAM data")
 	var err error
 	data := AccountData{}
 
@@ -82,7 +83,7 @@ func (a *awsIamFetcher) populateInlinePolicies(source []*iam.PolicyDetail, targe
 func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOutput, data *AccountData) error {
 	for _, userResp := range resp.UserDetailList {
 		if cfnResourceRegexp.MatchString(*userResp.UserName) {
-			logPrintf("Skipping CloudFormation generated user %s", *userResp.UserName)
+			log.Printf("Skipping CloudFormation generated user %s", *userResp.UserName)
 			continue
 		}
 
@@ -106,7 +107,7 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 
 	for _, groupResp := range resp.GroupDetailList {
 		if cfnResourceRegexp.MatchString(*groupResp.GroupName) {
-			logPrintf("Skipping CloudFormation generated group %s", *groupResp.GroupName)
+			log.Printf("Skipping CloudFormation generated group %s", *groupResp.GroupName)
 			continue
 		}
 
@@ -127,7 +128,7 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 
 	for _, roleResp := range resp.RoleDetailList {
 		if cfnResourceRegexp.MatchString(*roleResp.RoleName) {
-			logPrintf("Skipping CloudFormation generated role %s", *roleResp.RoleName)
+			log.Printf("Skipping CloudFormation generated role %s", *roleResp.RoleName)
 			continue
 		}
 
@@ -153,7 +154,7 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 
 	for _, policyResp := range resp.Policies {
 		if cfnResourceRegexp.MatchString(*policyResp.PolicyName) {
-			logPrintf("Skipping CloudFormation generated policy %s", *policyResp.PolicyName)
+			log.Printf("Skipping CloudFormation generated policy %s", *policyResp.PolicyName)
 			continue
 		}
 
