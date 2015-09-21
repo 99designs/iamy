@@ -10,7 +10,7 @@ Inspired by https://github.com/percolate/iamer.
 ## Usage
 
 ```bash
-$ iamy dump-to-yaml
+$ iamy dump
 Fetching AWS IAM data
 Dumping YAML IAM data
 
@@ -19,7 +19,7 @@ Name: foo.bar
 Path: /baz
 EOD
 
-$ iamy generate-sync-cmds
+$ iamy load
 Loading YAML IAM data
 Fetching AWS IAM data
 Generating sync commands for account 123456789-myaccount
