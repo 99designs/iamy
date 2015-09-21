@@ -32,7 +32,7 @@ func main() {
 		debug   = kingpin.Flag("debug", "Show debugging output").Bool()
 		dump    = kingpin.Command("dump", "Dumps users, groups and policies to files")
 		dumpDir = dump.Flag("dir", "The directory to dump yaml files to").Default(defaultDir).Short('d').String()
-		load    = kingpin.Command("load", "")
+		load    = kingpin.Command("load", "Loads users, groups and policies from files to active AWS account")
 		loadDir = load.Flag("dir", "The directoy to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
 	)
 
