@@ -14,9 +14,11 @@ $ iamy dump
 Fetching AWS IAM data
 Dumping YAML IAM data
 
-$ cat << EOD > 123456789-myaccount/users/foo.bar
-Name: foo.bar
-Path: /baz
+$ mkdir -p 123456789-myaccount/iam/user/foo
+$ touch 123456789-myaccount/iam/user/foo/bar.baz
+$ cat << EOD > 123456789-myaccount/users/billy.blogs
+Policies:
+- arn:aws:iam::aws:policy/ReadOnly
 EOD
 
 $ iamy load
@@ -24,5 +26,7 @@ Loading YAML IAM data
 Fetching AWS IAM data
 Generating sync commands for account 123456789-myaccount
 
-aws iam create-user --user-name foo.bar --path /baz
+aws iam create-user --path /foo --user-name bar.baz
+aws iam create-user --user-name billy.blogs
+aws iam attach-user-policy --user-name billy.blogs --policy-arn arn:aws:iam::aws:policy/ReadOnly
 ```
