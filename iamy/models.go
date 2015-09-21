@@ -96,8 +96,8 @@ type AwsResource interface {
 }
 
 type User struct {
-	Name           string         `yaml:"Name"`
-	Path           string         `yaml:"Path"`
+	Name           string         `yaml:"-"`
+	Path           string         `yaml:"-"`
 	Groups         []string       `yaml:"Groups,omitempty"`
 	InlinePolicies []InlinePolicy `yaml:"InlinePolicies,omitempty"`
 	Policies       []string       `yaml:"Policies,omitempty"`
@@ -108,8 +108,8 @@ func (u User) Arn(a *Account) string {
 }
 
 type Group struct {
-	Name           string         `yaml:"Name"`
-	Path           string         `yaml:"Path"`
+	Name           string         `yaml:"-"`
+	Path           string         `yaml:"-"`
 	InlinePolicies []InlinePolicy `yaml:"InlinePolicies,omitempty"`
 	Policies       []string       `yaml:"Policies,omitempty"`
 }
@@ -124,8 +124,8 @@ type InlinePolicy struct {
 }
 
 type Policy struct {
-	Name   string         `yaml:"Name"`
-	Path   string         `yaml:"Path"`
+	Name   string         `yaml:"-"`
+	Path   string         `yaml:"-"`
 	Policy PolicyDocument `yaml:"Policy"`
 }
 
@@ -134,8 +134,8 @@ func (p Policy) Arn(a *Account) string {
 }
 
 type Role struct {
-	Name                     string         `yaml:"Name"`
-	Path                     string         `yaml:"Path"`
+	Name                     string         `yaml:"-"`
+	Path                     string         `yaml:"-"`
 	AssumeRolePolicyDocument PolicyDocument `yaml:"AssumeRolePolicyDocument"`
 	InlinePolicies           []InlinePolicy `yaml:"InlinePolicies,omitempty"`
 	Policies                 []string       `yaml:"Policies,omitempty"`

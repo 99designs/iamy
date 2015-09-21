@@ -1,11 +1,9 @@
-name: DevOps
-path: ""
-roles: []
-inlinepolicies:
+Roles: []
+InlinePolicies:
 - Name: AdministratorAccess-DevOps-201106140931
   Policy:
     Statement:
     - Action: '*'
       Effect: Allow
       Resource: '*'
-policies: []
+Policies: []
