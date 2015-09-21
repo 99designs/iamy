@@ -29,11 +29,12 @@ type Ui struct {
 
 func main() {
 	var (
-		debug   = kingpin.Flag("debug", "Show debugging output").Bool()
-		dump    = kingpin.Command("dump", "Dumps users, groups and policies to files")
-		dumpDir = dump.Flag("dir", "The directory to dump yaml files to").Default(defaultDir).Short('d').String()
-		load    = kingpin.Command("load", "Loads users, groups and policies from files to active AWS account")
-		loadDir = load.Flag("dir", "The directoy to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
+		debug     = kingpin.Flag("debug", "Show debugging output").Bool()
+		dump      = kingpin.Command("dump", "Dumps users, groups and policies to files")
+		dumpDir   = dump.Flag("dir", "The directory to dump yaml files to").Default(defaultDir).Short('d').String()
+		canDelete = dump.Flag("delete", "Delete extraneous files from destination dir").Default(defaultDir).Bool()
+		load      = kingpin.Command("load", "Loads users, groups and policies from files to active AWS account")
+		loadDir   = load.Flag("dir", "The directoy to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
 	)
 
 	kingpin.Version(Version)
@@ -65,7 +66,8 @@ func main() {
 
 	case dump.FullCommand():
 		DumpCommand(ui, DumpCommandInput{
-			Dir: *dumpDir,
+			Dir:       *dumpDir,
+			CanDelete: *canDelete,
 		})
 	}
 }

@@ -3,7 +3,8 @@ package main
 import "github.com/99designs/iamy/iamy"
 
 type DumpCommandInput struct {
-	Dir string
+	Dir       string
+	CanDelete bool
 }
 
 func DumpCommand(ui Ui, input DumpCommandInput) {
@@ -13,7 +14,7 @@ func DumpCommand(ui Ui, input DumpCommandInput) {
 	}
 
 	iamy.Yaml.Dir = input.Dir
-	err = iamy.Yaml.Dump([]iamy.AccountData{*data})
+	err = iamy.Yaml.Dump(data, input.CanDelete)
 	if err != nil {
 		ui.Error.Fatal(err)
 	}
