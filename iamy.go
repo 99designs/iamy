@@ -24,13 +24,13 @@ func main() {
 	c := cli.NewCLI("iamy", Version)
 	c.Args = os.Args[1:]
 	c.Commands = map[string]cli.CommandFactory{
-		"dump-to-yaml": func() (cli.Command, error) {
+		"dump": func() (cli.Command, error) {
 			return &DumpCommand{
 				Ui: ui,
 			}, nil
 		},
-		"generate-sync-cmds": func() (cli.Command, error) {
-			return &SyncCommand{
+		"load": func() (cli.Command, error) {
+			return &LoadCommand{
 				Ui: ui,
 			}, nil
 		},
