@@ -13,11 +13,11 @@ import (
 )
 
 var Yaml = YamlLoadDumper{
-	userPath:   "{{.Account}}/iam/user{{.User.Path}}/{{.User.Name}}.yaml",
-	groupPath:  "{{.Account}}/iam/group{{.Group.Path}}/{{.Group.Name}}.yaml",
-	policyPath: "{{.Account}}/iam/policy{{.Policy.Path}}/{{.Policy.Name}}.yaml",
-	rolePath:   "{{.Account}}/iam/role{{.Role.Path}}/{{.Role.Name}}.yaml",
-	pathRegex:  regexp.MustCompile(`^(?P<account>.+)/iam/(?P<entity>(user|group|policy|role))(?P<path>.*)/(?P<name>.+)\.yaml$`),
+	userPath:   "{{.Account}}/iam/user{{.User.Path}}{{.User.Name}}.yaml",
+	groupPath:  "{{.Account}}/iam/group{{.Group.Path}}{{.Group.Name}}.yaml",
+	policyPath: "{{.Account}}/iam/policy{{.Policy.Path}}{{.Policy.Name}}.yaml",
+	rolePath:   "{{.Account}}/iam/role{{.Role.Path}}{{.Role.Name}}.yaml",
+	pathRegex:  regexp.MustCompile(`^(?P<account>.+)/iam/(?P<entity>(user|group|policy|role))(?P<path>.*/)(?P<name>.+)\.yaml$`),
 }
 
 type YamlLoadDumper struct {
@@ -76,8 +76,8 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 
 			accountid := result["account"]
 			entity := result["entity"]
-			// path := result["path"]
-			// name := result["name"]
+			path := result["path"]
+			name := result["name"]
 
 			if _, ok := accounts[accountid]; !ok {
 				accounts[accountid] = NewAccountData(accountid)
@@ -86,31 +86,39 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 			switch entity {
 			case "user":
 				u := User{}
-				err := unmarshalYamlFile(fp, &u)
+				err := a.unmarshalYamlFile(fp, &u)
 				if err != nil {
 					return nil, err
 				}
+				u.Name = name
+				u.Path = path
 				accounts[accountid].addUser(u)
 			case "group":
 				g := Group{}
-				err := unmarshalYamlFile(fp, &g)
+				err := a.unmarshalYamlFile(fp, &g)
 				if err != nil {
 					return nil, err
 				}
+				g.Name = name
+				g.Path = path
 				accounts[accountid].addGroup(g)
 			case "role":
 				r := Role{}
-				err := unmarshalYamlFile(fp, &r)
+				err := a.unmarshalYamlFile(fp, &r)
 				if err != nil {
 					return nil, err
 				}
+				r.Name = name
+				r.Path = path
 				accounts[accountid].addRole(r)
 			case "policy":
 				p := Policy{}
-				err := unmarshalYamlFile(fp, &p)
+				err := a.unmarshalYamlFile(fp, &p)
 				if err != nil {
 					return nil, err
 				}
+				p.Name = name
+				p.Path = path
 				accounts[accountid].addPolicy(p)
 			default:
 				panic("Unexpected entity")
@@ -172,7 +180,8 @@ func (f *YamlLoadDumper) writeUser(a *Account, u User) error {
 	return writeYamlFile(filepath.Join(f.Dir, path), u)
 }
 
-func unmarshalYamlFile(path string, entity interface{}) error {
+func (f *YamlLoadDumper) unmarshalYamlFile(relativePath string, entity interface{}) error {
+	path := filepath.Join(f.Dir, relativePath)
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err

@@ -1,4 +1,3 @@
-Name: ecsInstanceRole
 AssumeRolePolicyDocument:
   Statement:
   - Action: sts:AssumeRole
@@ -22,4 +21,3 @@ InlinePolicies:
       Resource:
       - '*'
     Version: 2012-10-17
-Policies: []

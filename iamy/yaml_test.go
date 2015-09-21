@@ -44,7 +44,6 @@ func TestRoundTrip(t *testing.T) {
 	}
 
 	Yaml.Dir = filepath.Join(d, "testdata")
-
 	accountData, err := Yaml.Load()
 	if err != nil {
 		t.Fatal(err.Error())
