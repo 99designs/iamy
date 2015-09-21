@@ -1,47 +1,83 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 
-	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mitchellh/cli"
-	"github.com/99designs/iamy/iamy"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	Version string
+	Version    string
+	defaultDir string
 )
 
+type logWriter struct{ *log.Logger }
+
+func (w logWriter) Write(b []byte) (int, error) {
+	w.Printf("%s", b)
+	return len(b), nil
+}
+
+type Ui struct {
+	*log.Logger
+	Error, Debug *log.Logger
+	Exit         func(code int)
+}
+
 func main() {
-	ui := &cli.ColoredUi{
-		InfoColor: cli.UiColorCyan,
-		Ui: &cli.BasicUi{
-			Writer: os.Stdout,
-			Reader: os.Stdin,
-		},
+	var (
+		debug   = kingpin.Flag("debug", "Show debugging output").Bool()
+		dump    = kingpin.Command("dump", "Dumps users, groups and policies to files")
+		dumpDir = dump.Flag("dir", "The directory to dump yaml files to").Default(defaultDir).Short('d').String()
+		load    = kingpin.Command("load", "")
+		loadDir = load.Flag("dir", "The directoy to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
+	)
+
+	kingpin.Version(Version)
+	kingpin.CommandLine.Help =
+		`Read and write AWS IAM users, policies, groups and roles from YAML files.`
+
+	ui := Ui{
+		Logger: log.New(os.Stdout, "", 0),
+		Error:  log.New(os.Stderr, "", 0),
+		Debug:  log.New(ioutil.Discard, "", 0),
+		Exit:   os.Exit,
 	}
 
-	c := cli.NewCLI("iamy", Version)
-	c.Args = os.Args[1:]
-	c.Commands = map[string]cli.CommandFactory{
-		"dump": func() (cli.Command, error) {
-			return &DumpCommand{
-				Ui: ui,
-			}, nil
-		},
-		"load": func() (cli.Command, error) {
-			return &LoadCommand{
-				Ui: ui,
-			}, nil
-		},
+	cmd := kingpin.Parse()
+
+	if *debug {
+		ui.Debug = log.New(os.Stderr, "DEBUG ", log.LstdFlags)
+		log.SetFlags(0)
+		log.SetOutput(&logWriter{ui.Debug})
+	} else {
+		log.SetOutput(ioutil.Discard)
 	}
 
-	iamy.Logger = ui.Info
+	switch cmd {
+	case load.FullCommand():
+		LoadCommand(ui, LoadCommandInput{
+			Dir: *loadDir,
+		})
 
-	exitStatus, err := c.Run()
+	case dump.FullCommand():
+		DumpCommand(ui, DumpCommandInput{
+			Dir: *dumpDir,
+		})
+	}
+}
+
+func init() {
+	dir, err := os.Getwd()
 	if err != nil {
-		log.Println(err)
+		panic(err)
 	}
-
-	os.Exit(exitStatus)
+	dir, err = filepath.EvalSymlinks(dir)
+	if err != nil {
+		panic(err)
+	}
+	defaultDir = filepath.Clean(dir)
 }
