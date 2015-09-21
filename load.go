@@ -11,7 +11,7 @@ import (
 	"github.com/99designs/iamy/iamy"
 )
 
-type SyncCommand struct {
+type LoadCommand struct {
 	Ui cli.Ui
 }
 
@@ -31,7 +31,7 @@ func getDirOrDefault(dir string) (string, error) {
 	return filepath.Clean(dir), nil
 }
 
-func (c *SyncCommand) Run(args []string) int {
+func (c *LoadCommand) Run(args []string) int {
 	var dir string
 	flagSet := flag.NewFlagSet("dump", flag.ContinueOnError)
 	flagSet.StringVar(&dir, "dir", "", "Directory to read files from")
@@ -74,14 +74,14 @@ func (c *SyncCommand) Run(args []string) int {
 	return 0
 }
 
-func (c *SyncCommand) Help() string {
+func (c *LoadCommand) Help() string {
 	helpText := `
-Usage: iamy dump [-dir <output dir>]
+Usage: iamy load [-dir <yaml dir>]
   Loads users, groups and policies from yaml files and generates aws cli commands to sync with AWS
 `
 	return strings.TrimSpace(helpText)
 }
 
-func (c *SyncCommand) Synopsis() string {
+func (c *LoadCommand) Synopsis() string {
 	return "Loads users, groups and policies from yaml files and generates aws cli commands to sync with AWS"
 }
