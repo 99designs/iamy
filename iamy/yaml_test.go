@@ -51,7 +51,7 @@ func TestRoundTrip(t *testing.T) {
 
 	testdir := newTmpDir()
 	Yaml.Dir = testdir
-	err = Yaml.Dump(accountData)
+	err = Yaml.Dump(&accountData[0], false)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

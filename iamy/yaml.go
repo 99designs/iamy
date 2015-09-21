@@ -136,33 +136,37 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 	return accts, nil
 }
 
-func (f *YamlLoadDumper) Dump(accounts []AccountData) error {
+func (f *YamlLoadDumper) Dump(accountData *AccountData, canDelete bool) error {
+	destDir := filepath.Join(f.Dir, accountData.Account.String())
 	log.Println("Dumping YAML IAM data to", f.Dir)
 
-	for _, accountData := range accounts {
-
-		for _, u := range accountData.Users {
-			if err := f.writeUser(accountData.Account, u); err != nil {
-				return err
-			}
+	if canDelete {
+		if err := os.RemoveAll(destDir); err != nil {
+			return err
 		}
+	}
 
-		for _, policy := range accountData.Policies {
-			if err := f.writePolicy(accountData.Account, policy); err != nil {
-				return err
-			}
+	for _, u := range accountData.Users {
+		if err := f.writeUser(accountData.Account, u); err != nil {
+			return err
 		}
+	}
 
-		for _, group := range accountData.Groups {
-			if err := f.writeGroup(accountData.Account, group); err != nil {
-				return err
-			}
+	for _, policy := range accountData.Policies {
+		if err := f.writePolicy(accountData.Account, policy); err != nil {
+			return err
 		}
+	}
 
-		for _, role := range accountData.Roles {
-			if err := f.writeRole(accountData.Account, role); err != nil {
-				return err
-			}
+	for _, group := range accountData.Groups {
+		if err := f.writeGroup(accountData.Account, group); err != nil {
+			return err
+		}
+	}
+
+	for _, role := range accountData.Roles {
+		if err := f.writeRole(accountData.Account, role); err != nil {
+			return err
 		}
 	}
 
