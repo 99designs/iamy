@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gopkg.in/alecthomas/kingpin.v2"
+	"github.com/99designs/iamy/Godeps/_workspace/src/gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (

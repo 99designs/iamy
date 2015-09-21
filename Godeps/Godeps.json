@@ -6,6 +6,14 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/alecthomas/template",
+			"Rev": "b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/units",
+			"Rev": "6b4e7dc5e3143b85ea77909c72caf89416fc2915"
+		},
+		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
 			"Comment": "v0.9.8",
 			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
@@ -51,16 +59,17 @@
 			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
 		},
 		{
-			"ImportPath": "github.com/mitchellh/cli",
-			"Rev": "8230c3f351c1efa17429df4e771ab8dcd67ff4bd"
-		},
-		{
 			"ImportPath": "github.com/mtibben/yamljsonmap",
 			"Rev": "989f28063dd306bdc0387775ce3f4452866cfda7"
 		},
 		{
 			"ImportPath": "github.com/vaughan0/go-ini",
 			"Rev": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1"
+		},
+		{
+			"ImportPath": "gopkg.in/alecthomas/kingpin.v2",
+			"Comment": "v2.0.12",
+			"Rev": "639879d6110b1b0409410c7b737ef0bb18325038"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
