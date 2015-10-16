@@ -19,7 +19,7 @@ $ mkdir -p myaccount-123456789/user/foo
 
 $ touch myaccount-123456789/user/foo/bar.baz
 
-$ cat << EOD > myaccount-123456789/users/billy.blogs
+$ cat << EOD > myaccount-123456789/user/billy.blogs
 Policies:
 - arn:aws:iam::aws:policy/ReadOnly
 EOD
