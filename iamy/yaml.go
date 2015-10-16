@@ -13,17 +13,14 @@ import (
 )
 
 var Yaml = YamlLoadDumper{
-	userPath:   "{{.Account}}/iam/user{{.User.Path}}{{.User.Name}}.yaml",
-	groupPath:  "{{.Account}}/iam/group{{.Group.Path}}{{.Group.Name}}.yaml",
-	policyPath: "{{.Account}}/iam/policy{{.Policy.Path}}{{.Policy.Name}}.yaml",
-	rolePath:   "{{.Account}}/iam/role{{.Role.Path}}{{.Role.Name}}.yaml",
-	pathRegex:  regexp.MustCompile(`^(?P<account>.+)/iam/(?P<entity>(user|group|policy|role))(?P<path>.*/)(?P<name>.+)\.yaml$`),
+	pathTemplate: "{{.Account}}/iam/{{.Resource.Type}}{{.Resource.Path}}{{.Resource.Name}}.yaml",
+	pathRegex:    regexp.MustCompile(`^(?P<account>.+)/iam/(?P<entity>(user|group|policy|role))(?P<path>.*/)(?P<name>.+)\.yaml$`),
 }
 
 type YamlLoadDumper struct {
-	userPath, groupPath, policyPath, rolePath string
-	pathRegex                                 *regexp.Regexp
-	Dir                                       string
+	pathTemplate string
+	pathRegex    *regexp.Regexp
+	Dir          string
 }
 
 func (a *YamlLoadDumper) getFilesRecursively() ([]string, error) {
@@ -174,9 +171,9 @@ func (f *YamlLoadDumper) Dump(accountData *AccountData, canDelete bool) error {
 }
 
 func (f *YamlLoadDumper) writeUser(a *Account, u User) error {
-	path, err := renderPath(f.userPath, map[string]interface{}{
-		"Account": a,
-		"User":    u,
+	path, err := renderPath(f.pathTemplate, map[string]interface{}{
+		"Account":  a,
+		"Resource": u,
 	})
 	if err != nil {
 		return err
@@ -199,9 +196,9 @@ func (f *YamlLoadDumper) unmarshalYamlFile(relativePath string, entity interface
 }
 
 func (f *YamlLoadDumper) writeGroup(a *Account, g Group) error {
-	path, err := renderPath(f.groupPath, map[string]interface{}{
-		"Account": a,
-		"Group":   g,
+	path, err := renderPath(f.pathTemplate, map[string]interface{}{
+		"Account":  a,
+		"Resource": g,
 	})
 	if err != nil {
 		return err
@@ -210,9 +207,9 @@ func (f *YamlLoadDumper) writeGroup(a *Account, g Group) error {
 }
 
 func (f *YamlLoadDumper) writePolicy(a *Account, p Policy) error {
-	path, err := renderPath(f.policyPath, map[string]interface{}{
-		"Account": a,
-		"Policy":  p,
+	path, err := renderPath(f.pathTemplate, map[string]interface{}{
+		"Account":  a,
+		"Resource": p,
 	})
 	if err != nil {
 		return err
@@ -221,9 +218,9 @@ func (f *YamlLoadDumper) writePolicy(a *Account, p Policy) error {
 }
 
 func (f *YamlLoadDumper) writeRole(a *Account, r Role) error {
-	path, err := renderPath(f.rolePath, map[string]interface{}{
-		"Account": a,
-		"Role":    r,
+	path, err := renderPath(f.pathTemplate, map[string]interface{}{
+		"Account":  a,
+		"Resource": r,
 	})
 	if err != nil {
 		return err

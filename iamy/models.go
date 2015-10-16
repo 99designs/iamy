@@ -92,7 +92,13 @@ func NewAccountFromString(s string) *Account {
 }
 
 type AwsResource interface {
-	Arn(*Account) string
+	Type() string
+	NameString() string
+	PathString() string
+}
+
+func Arn(r AwsResource, a *Account) string {
+	return a.arnFor(r.Type(), r.PathString(), r.NameString())
 }
 
 type User struct {
@@ -103,8 +109,16 @@ type User struct {
 	Policies       []string       `yaml:"Policies,omitempty"`
 }
 
-func (u User) Arn(a *Account) string {
-	return a.arnFor("user", u.Path, u.Name)
+func (u User) Type() string {
+	return "user"
+}
+
+func (u User) NameString() string {
+	return u.Name
+}
+
+func (u User) PathString() string {
+	return u.Path
 }
 
 type Group struct {
@@ -114,8 +128,16 @@ type Group struct {
 	Policies       []string       `yaml:"Policies,omitempty"`
 }
 
-func (g Group) Arn(a *Account) string {
-	return a.arnFor("group", g.Path, g.Name)
+func (g Group) Type() string {
+	return "group"
+}
+
+func (g Group) NameString() string {
+	return g.Name
+}
+
+func (g Group) PathString() string {
+	return g.Path
 }
 
 type InlinePolicy struct {
@@ -129,8 +151,16 @@ type Policy struct {
 	Policy PolicyDocument `yaml:"Policy"`
 }
 
-func (p Policy) Arn(a *Account) string {
-	return a.arnFor("policy", p.Path, p.Name)
+func (p Policy) Type() string {
+	return "policy"
+}
+
+func (p Policy) NameString() string {
+	return p.Name
+}
+
+func (p Policy) PathString() string {
+	return p.Path
 }
 
 type Role struct {
@@ -141,8 +171,16 @@ type Role struct {
 	Policies                 []string       `yaml:"Policies,omitempty"`
 }
 
-func (r Role) Arn(a *Account) string {
-	return a.arnFor("role", r.Path, r.Name)
+func (r Role) Type() string {
+	return "role"
+}
+
+func (r Role) NameString() string {
+	return r.Name
+}
+
+func (r Role) PathString() string {
+	return r.Path
 }
 
 type AccountData struct {

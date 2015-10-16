@@ -58,7 +58,7 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 	// delete old entities
 	for _, fromPolicy := range a.from.Policies {
 		if found, _ := a.to.FindPolicyByName(fromPolicy.Name, fromPolicy.Path); !found {
-			a.cmds.Add("aws", "iam", "delete-policy", "--policy-arn", fromPolicy.Arn(a.to.Account))
+			a.cmds.Add("aws", "iam", "delete-policy", "--policy-arn", Arn(fromPolicy, a.to.Account))
 		}
 	}
 	for _, fromRole := range a.from.Roles {
@@ -84,7 +84,7 @@ func (a *awsSyncCmdGenerator) updatePolicies() {
 		if found, fromPolicy := a.from.FindPolicyByName(toPolicy.Name, toPolicy.Path); found {
 			// Update policy
 			if fromPolicy.Policy.JsonString() != toPolicy.Policy.JsonString() {
-				a.cmds.Add("aws", "iam", "create-policy-version", "--policy-arn", toPolicy.Arn(a.to.Account), "--set-as-default", "--policy-document", toPolicy.Policy.JsonString())
+				a.cmds.Add("aws", "iam", "create-policy-version", "--policy-arn", Arn(toPolicy, a.to.Account), "--set-as-default", "--policy-document", toPolicy.Policy.JsonString())
 			}
 		} else {
 			// Create policy
