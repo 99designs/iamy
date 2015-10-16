@@ -13,8 +13,8 @@ import (
 )
 
 var Yaml = YamlLoadDumper{
-	pathTemplate: "{{.Account}}/iam/{{.Resource.Type}}{{.Resource.Path}}{{.Resource.Name}}.yaml",
-	pathRegex:    regexp.MustCompile(`^(?P<account>.+)/iam/(?P<entity>(user|group|policy|role))(?P<path>.*/)(?P<name>.+)\.yaml$`),
+	pathTemplate: "{{.Account}}/{{.Resource.Type}}{{.Resource.Path}}{{.Resource.Name}}.yaml",
+	pathRegex:    regexp.MustCompile(`^(?P<account>.+)/(?P<entity>(user|group|policy|role))(?P<path>.*/)(?P<name>.+)\.yaml$`),
 }
 
 type YamlLoadDumper struct {
