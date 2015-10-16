@@ -2,12 +2,12 @@ package main
 
 import "github.com/99designs/iamy/iamy"
 
-type DumpCommandInput struct {
+type PullCommandInput struct {
 	Dir       string
 	CanDelete bool
 }
 
-func DumpCommand(ui Ui, input DumpCommandInput) {
+func PullCommand(ui Ui, input PullCommandInput) {
 	data, err := iamy.Aws.Fetch()
 	if err != nil {
 		ui.Error.Fatal(err)
