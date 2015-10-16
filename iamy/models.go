@@ -66,12 +66,12 @@ type Account struct {
 
 func (a Account) String() string {
 	if a.Alias != "" {
-		return fmt.Sprintf("%s-%s", a.Id, a.Alias)
+		return fmt.Sprintf("%s-%s", a.Alias, a.Id)
 	}
 	return a.Id
 }
 
-var accountReg = regexp.MustCompile(`^(\d+)(-([\w-]+))?$`)
+var accountReg = regexp.MustCompile(`^(([\w-]+)-)?(\d+)$`)
 
 func NewAccountFromString(s string) *Account {
 	acct := Account{}
@@ -80,8 +80,8 @@ func NewAccountFromString(s string) *Account {
 	if len(result) == 0 {
 		panic(fmt.Sprintf("Can't create account name from %s", s))
 	} else if len(result[0]) == 4 {
-		acct.Alias = result[0][3]
-		acct.Id = result[0][1]
+		acct.Alias = result[0][2]
+		acct.Id = result[0][3]
 	} else if len(result[0]) == 3 {
 		acct.Id = result[0][1]
 	} else {

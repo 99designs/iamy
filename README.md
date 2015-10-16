@@ -13,13 +13,13 @@ Inspired by https://github.com/percolate/iamer.
 $ iamy pull
 
 $ find .
-./123456789-myaccount/iam/user/joe.yml
+./myaccount-123456789/iam/user/joe.yml
 
-$ mkdir -p 123456789-myaccount/iam/user/foo
+$ mkdir -p myaccount-123456789/iam/user/foo
 
-$ touch 123456789-myaccount/iam/user/foo/bar.baz
+$ touch myaccount-123456789/iam/user/foo/bar.baz
 
-$ cat << EOD > 123456789-myaccount/users/billy.blogs
+$ cat << EOD > myaccount-123456789/users/billy.blogs
 Policies:
 - arn:aws:iam::aws:policy/ReadOnly
 EOD
