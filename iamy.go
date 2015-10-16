@@ -30,11 +30,11 @@ type Ui struct {
 func main() {
 	var (
 		debug     = kingpin.Flag("debug", "Show debugging output").Bool()
-		dump      = kingpin.Command("dump", "Dumps users, groups and policies to files")
-		dumpDir   = dump.Flag("dir", "The directory to dump yaml files to").Default(defaultDir).Short('d').String()
-		canDelete = dump.Flag("delete", "Delete extraneous files from destination dir").Bool()
-		load      = kingpin.Command("load", "Loads users, groups and policies from files to active AWS account")
-		loadDir   = load.Flag("dir", "The directoy to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
+		pull      = kingpin.Command("pull", "Syncs IAM users, groups and policies from the active AWS account to files")
+		pullDir   = pull.Flag("dir", "The directory to dump yaml files to").Default(defaultDir).Short('d').String()
+		canDelete = pull.Flag("delete", "Delete extraneous files from destination dir").Bool()
+		push      = kingpin.Command("push", "Syncs IAM users, groups and policies from files to the active AWS account")
+		pushDir   = push.Flag("dir", "The directoy to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
 	)
 
 	kingpin.Version(Version)
@@ -59,14 +59,14 @@ func main() {
 	}
 
 	switch cmd {
-	case load.FullCommand():
-		LoadCommand(ui, LoadCommandInput{
-			Dir: *loadDir,
+	case push.FullCommand():
+		PushCommand(ui, PushCommandInput{
+			Dir: *pushDir,
 		})
 
-	case dump.FullCommand():
-		DumpCommand(ui, DumpCommandInput{
-			Dir:       *dumpDir,
+	case pull.FullCommand():
+		PullCommand(ui, PullCommandInput{
+			Dir:       *pullDir,
 			CanDelete: *canDelete,
 		})
 	}
