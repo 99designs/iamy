@@ -13,11 +13,11 @@ Inspired by https://github.com/percolate/iamer.
 $ iamy pull
 
 $ find .
-./myaccount-123456789/iam/user/joe.yml
+./myaccount-123456789/user/joe.yml
 
-$ mkdir -p myaccount-123456789/iam/user/foo
+$ mkdir -p myaccount-123456789/user/foo
 
-$ touch myaccount-123456789/iam/user/foo/bar.baz
+$ touch myaccount-123456789/user/foo/bar.baz
 
 $ cat << EOD > myaccount-123456789/users/billy.blogs
 Policies:
