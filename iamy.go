@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	Version    string
+	Version    string = "dev"
 	defaultDir string
 )
 
