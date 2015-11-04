@@ -246,6 +246,40 @@ func (a *awsIamFetcher) determineAccountIdViaListUsers() (string, error) {
 	return getAccountIdFromArn(*listUsersResp.Users[0].Arn), nil
 }
 
+func (a *awsIamFetcher) MustGetSecurityCredsForUser(username string) (accessKeyIds, mfaIds []string, hasLoginProfile bool) {
+	// access keys
+	listUsersResp, err := a.client.ListAccessKeys(&iam.ListAccessKeysInput{
+		UserName: aws.String(username),
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, m := range listUsersResp.AccessKeyMetadata {
+		accessKeyIds = append(accessKeyIds, *m.AccessKeyId)
+	}
+
+	// mfa devices
+	mfaResp, err := a.client.ListMFADevices(&iam.ListMFADevicesInput{
+		UserName: aws.String(username),
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, m := range mfaResp.MFADevices {
+		mfaIds = append(mfaIds, *m.SerialNumber)
+	}
+
+	// login profile
+	_, err = a.client.GetLoginProfile(&iam.GetLoginProfileInput{
+		UserName: aws.String(username),
+	})
+	if err == nil {
+		hasLoginProfile = true
+	}
+
+	return
+}
+
 // see http://stackoverflow.com/a/30578645
 func determineAccountIdViaDefaultSecurityGroup() (string, error) {
 	ec2Client := ec2.New(nil)
