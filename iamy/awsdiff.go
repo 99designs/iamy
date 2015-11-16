@@ -63,16 +63,67 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 	}
 	for _, fromRole := range a.from.Roles {
 		if found, _ := a.to.FindRoleByName(fromRole.Name, fromRole.Path); !found {
+			// remove inline policies
+			for _, ip := range fromRole.InlinePolicies {
+				a.cmds.Add("aws", "iam", "delete-role-policy", "--role-name", fromRole.Name, "--policy-name", ip.Name)
+			}
+			// detach managed policies
+			for _, p := range fromRole.Policies {
+				a.cmds.Add("aws", "iam", "detach-role-policy", "--role-name", fromRole.Name, "--policy-arn", a.to.Account.policyArnFromString(p))
+			}
+
+			// remove role
 			a.cmds.Add("aws", "iam", "delete-role", "--role-name", fromRole.Name)
 		}
 	}
 	for _, fromGroup := range a.from.Groups {
 		if found, _ := a.to.FindGroupByName(fromGroup.Name, fromGroup.Path); !found {
+			// remove inline policies
+			for _, ip := range fromGroup.InlinePolicies {
+				a.cmds.Add("aws", "iam", "delete-group-policy", "--group-name", fromGroup.Name, "--policy-name", ip.Name)
+			}
+			// detach managed policies
+			for _, p := range fromGroup.Policies {
+				a.cmds.Add("aws", "iam", "detach-group-policy", "--group-name", fromGroup.Name, "--policy-arn", a.to.Account.policyArnFromString(p))
+			}
+
+			// remove group
 			a.cmds.Add("aws", "iam", "delete-group", "--group-name", fromGroup.Name)
 		}
 	}
 	for _, fromUser := range a.from.Users {
 		if found, _ := a.to.FindUserByName(fromUser.Name, fromUser.Path); !found {
+			// remove inline policies
+			for _, ip := range fromUser.InlinePolicies {
+				a.cmds.Add("aws", "iam", "delete-user-policy", "--user-name", fromUser.Name, "--policy-name", ip.Name)
+			}
+			// detach managed policies
+			for _, p := range fromUser.Policies {
+				a.cmds.Add("aws", "iam", "detach-user-policy", "--user-name", fromUser.Name, "--policy-arn", a.to.Account.policyArnFromString(p))
+			}
+			// remove from groups
+			for _, g := range fromUser.Groups {
+				a.cmds.Add("aws", "iam", "remove-user-from-group", "--user-name", fromUser.Name, "--group-name", g)
+			}
+
+			// remove access keys
+			accessKeys, mfaDevices, hasLoginProfile := Aws.MustGetSecurityCredsForUser(fromUser.Name)
+			for _, keyId := range accessKeys {
+				a.cmds.Add("aws", "iam", "delete-access-key", "--user-name", fromUser.Name, "--access-key-id", keyId)
+			}
+
+			// remove mfa devices
+			for _, mfaId := range mfaDevices {
+				a.cmds.Add("aws", "iam", "deactivate-mfa-device", "--user-name", fromUser.Name, "--serial-number", mfaId)
+				a.cmds.Add("aws", "iam", "delete-virtual-mfa-device", "--serial-number", mfaId)
+			}
+
+			// remove password
+			if hasLoginProfile {
+				a.cmds.Add("aws", "iam", "delete-login-profile", "--user-name", fromUser.Name)
+			}
+
+			// remove user
 			a.cmds.Add("aws", "iam", "delete-user", "--user-name", fromUser.Name)
 		}
 	}
