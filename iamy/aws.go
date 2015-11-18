@@ -298,3 +298,21 @@ func determineAccountIdViaDefaultSecurityGroup() (string, error) {
 
 	return *sg.SecurityGroups[0].OwnerId, nil
 }
+
+func (a *awsIamFetcher) MustGetNonDefaultPolicyVersions(policyArn string) []string {
+	listPolicyVersions, err := a.client.ListPolicyVersions(&iam.ListPolicyVersionsInput{
+		PolicyArn: aws.String(policyArn),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	versions := []string{}
+	for _, v := range listPolicyVersions.Versions {
+		if !*v.IsDefaultVersion {
+			versions = append(versions, *v.VersionId)
+		}
+	}
+
+	return versions
+}

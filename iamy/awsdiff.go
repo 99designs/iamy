@@ -55,12 +55,8 @@ type awsSyncCmdGenerator struct {
 }
 
 func (a *awsSyncCmdGenerator) deleteOldEntities() {
-	// delete old entities
-	for _, fromPolicy := range a.from.Policies {
-		if found, _ := a.to.FindPolicyByName(fromPolicy.Name, fromPolicy.Path); !found {
-			a.cmds.Add("aws", "iam", "delete-policy", "--policy-arn", Arn(fromPolicy, a.to.Account))
-		}
-	}
+
+	// detach policies and groups from entities about to be deleted
 	for _, fromRole := range a.from.Roles {
 		if found, _ := a.to.FindRoleByName(fromRole.Name, fromRole.Path); !found {
 			// remove inline policies
@@ -71,9 +67,6 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 			for _, p := range fromRole.Policies {
 				a.cmds.Add("aws", "iam", "detach-role-policy", "--role-name", fromRole.Name, "--policy-arn", a.to.Account.policyArnFromString(p))
 			}
-
-			// remove role
-			a.cmds.Add("aws", "iam", "delete-role", "--role-name", fromRole.Name)
 		}
 	}
 	for _, fromGroup := range a.from.Groups {
@@ -86,9 +79,6 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 			for _, p := range fromGroup.Policies {
 				a.cmds.Add("aws", "iam", "detach-group-policy", "--group-name", fromGroup.Name, "--policy-arn", a.to.Account.policyArnFromString(p))
 			}
-
-			// remove group
-			a.cmds.Add("aws", "iam", "delete-group", "--group-name", fromGroup.Name)
 		}
 	}
 	for _, fromUser := range a.from.Users {
@@ -105,7 +95,32 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 			for _, g := range fromUser.Groups {
 				a.cmds.Add("aws", "iam", "remove-user-from-group", "--user-name", fromUser.Name, "--group-name", g)
 			}
+		}
+	}
 
+	// delete old entities
+	for _, fromPolicy := range a.from.Policies {
+		if found, _ := a.to.FindPolicyByName(fromPolicy.Name, fromPolicy.Path); !found {
+			for _, v := range Aws.MustGetNonDefaultPolicyVersions(Arn(fromPolicy, a.to.Account)) {
+				a.cmds.Add("aws", "iam", "delete-policy-version", "--version-id", v, "--policy-arn", Arn(fromPolicy, a.to.Account))
+			}
+			a.cmds.Add("aws", "iam", "delete-policy", "--policy-arn", Arn(fromPolicy, a.to.Account))
+		}
+	}
+	for _, fromRole := range a.from.Roles {
+		if found, _ := a.to.FindRoleByName(fromRole.Name, fromRole.Path); !found {
+			// remove role
+			a.cmds.Add("aws", "iam", "delete-role", "--role-name", fromRole.Name)
+		}
+	}
+	for _, fromGroup := range a.from.Groups {
+		if found, _ := a.to.FindGroupByName(fromGroup.Name, fromGroup.Path); !found {
+			// remove group
+			a.cmds.Add("aws", "iam", "delete-group", "--group-name", fromGroup.Name)
+		}
+	}
+	for _, fromUser := range a.from.Users {
+		if found, _ := a.to.FindUserByName(fromUser.Name, fromUser.Path); !found {
 			// remove access keys
 			accessKeys, mfaDevices, hasLoginProfile := Aws.MustGetSecurityCredsForUser(fromUser.Name)
 			for _, keyId := range accessKeys {
@@ -127,6 +142,7 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 			a.cmds.Add("aws", "iam", "delete-user", "--user-name", fromUser.Name)
 		}
 	}
+
 }
 
 func (a *awsSyncCmdGenerator) updatePolicies() {
