@@ -1,12 +1,14 @@
 {
 	"ImportPath": "github.com/99designs/iamy",
-	"GoVersion": "go1.5",
-	"Packages": [
-		"./..."
-	],
+	"GoVersion": "go1.6",
+	"GodepVersion": "v69",
 	"Deps": [
 		{
 			"ImportPath": "github.com/alecthomas/template",
+			"Rev": "b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/template/parse",
 			"Rev": "b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0"
 		},
 		{
@@ -15,6 +17,56 @@
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/awserr",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/awsutil",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/corehandlers",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/credentials",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/defaults",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/ec2metadata",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/request",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/service",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/aws/service/serviceinfo",
 			"Comment": "v0.9.8",
 			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
 		},
@@ -30,6 +82,11 @@
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/query",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/internal/protocol/query/queryutil",
 			"Comment": "v0.9.8",
 			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
 		},
@@ -55,6 +112,11 @@
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/service/iam",
+			"Comment": "v0.9.8",
+			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/iam/iamiface",
 			"Comment": "v0.9.8",
 			"Rev": "efe00a0b2363036d4efa6a83c17a88334e0f3a3b"
 		},

@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"text/template"
 
-	"github.com/99designs/iamy/Godeps/_workspace/src/gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var Yaml = YamlLoadDumper{
