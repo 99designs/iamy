@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
@@ -14,8 +15,10 @@ import (
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 
+var awsSession = session.New()
+
 var Aws = awsIamFetcher{
-	client: iam.New(nil),
+	client: iam.New(awsSession),
 }
 
 type awsIamFetcher struct {
@@ -282,7 +285,7 @@ func (a *awsIamFetcher) MustGetSecurityCredsForUser(username string) (accessKeyI
 
 // see http://stackoverflow.com/a/30578645
 func determineAccountIdViaDefaultSecurityGroup() (string, error) {
-	ec2Client := ec2.New(nil)
+	ec2Client := ec2.New(awsSession)
 
 	sg, err := ec2Client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 		GroupNames: []*string{
