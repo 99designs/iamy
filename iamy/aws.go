@@ -6,10 +6,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
-	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/iam"
-	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/iam/iamiface"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 )
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)

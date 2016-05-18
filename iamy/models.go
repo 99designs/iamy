@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/99designs/iamy/Godeps/_workspace/src/github.com/mtibben/yamljsonmap"
+	"github.com/mtibben/yamljsonmap"
 )
 
 type PolicyDocument yamljsonmap.StringKeyMap
