@@ -13,7 +13,7 @@
 		},
 		{
 			"ImportPath": "github.com/alecthomas/units",
-			"Rev": "6b4e7dc5e3143b85ea77909c72caf89416fc2915"
+			"Rev": "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
@@ -147,16 +147,16 @@
 		},
 		{
 			"ImportPath": "github.com/mtibben/yamljsonmap",
-			"Rev": "989f28063dd306bdc0387775ce3f4452866cfda7"
+			"Rev": "61ad1237ec8b3d5057d5cccfdc8ab2e3341ab4be"
 		},
 		{
 			"ImportPath": "gopkg.in/alecthomas/kingpin.v2",
-			"Comment": "v2.0.12",
-			"Rev": "639879d6110b1b0409410c7b737ef0bb18325038"
+			"Comment": "v2.1.11",
+			"Rev": "8cccfa8eb2e3183254457fb1749b2667fbc364c7"
 		},
 		{
 			"ImportPath": "gopkg.in/yaml.v2",
-			"Rev": "c1cd2254a6dd314c9d73c338c12688c9325d85c6"
+			"Rev": "a83829b6f1293c91addabc89d0571c246397bbf4"
 		}
 	]
 }
