@@ -7,22 +7,18 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 )
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 
-var awsSession = session.New()
-
 var Aws = awsIamFetcher{
-	client: iam.New(awsSession),
+	iam: newIamClient(),
 }
 
 type awsIamFetcher struct {
-	client  iamiface.IAMAPI
+	iam     *iamClient
 	account *Account
 }
 
@@ -36,32 +32,22 @@ func (a *awsIamFetcher) Fetch() (*AccountData, error) {
 	}
 	a.account = data.Account
 
-	complete := false
-	var marker *string = nil
-	for !complete {
-		resp, err := a.client.GetAccountAuthorizationDetails(&iam.GetAccountAuthorizationDetailsInput{
-			MaxItems: aws.Int64(1000),
-			Marker:   marker,
-			Filter: aws.StringSlice([]string{
-				iam.EntityTypeUser,
-				iam.EntityTypeGroup,
-				iam.EntityTypeRole,
-				iam.EntityTypeLocalManagedPolicy,
-			}),
-		})
-		if err != nil {
-			return nil, err
-		}
+	responses, err := a.iam.getAccountAuthorizationDetailsResponses(&iam.GetAccountAuthorizationDetailsInput{
+		Filter: aws.StringSlice([]string{
+			iam.EntityTypeUser,
+			iam.EntityTypeGroup,
+			iam.EntityTypeRole,
+			iam.EntityTypeLocalManagedPolicy,
+		}),
+	})
+	if err != nil {
+		return nil, err
+	}
 
+	for _, resp := range responses {
 		err = a.populateData(resp, &data)
 		if err != nil {
 			return nil, err
-		}
-
-		if *resp.IsTruncated {
-			marker = resp.Marker
-		} else {
-			complete = true
 		}
 	}
 
@@ -189,7 +175,7 @@ func (a *awsIamFetcher) getAccount() (*Account, error) {
 		return nil, err
 	}
 
-	aliasResp, err := a.client.ListAccountAliases(&iam.ListAccountAliasesInput{})
+	aliasResp, err := a.iam.ListAccountAliases(&iam.ListAccountAliasesInput{})
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +215,7 @@ func getAccountIdFromArn(arn string) string {
 
 // see http://stackoverflow.com/a/18124234
 func (a *awsIamFetcher) determineAccountIdViaGetUser() (string, error) {
-	getUserResp, err := a.client.GetUser(&iam.GetUserInput{})
+	getUserResp, err := a.iam.GetUser(&iam.GetUserInput{})
 	if err != nil {
 		return "", err
 	}
@@ -238,7 +224,7 @@ func (a *awsIamFetcher) determineAccountIdViaGetUser() (string, error) {
 }
 
 func (a *awsIamFetcher) determineAccountIdViaListUsers() (string, error) {
-	listUsersResp, err := a.client.ListUsers(&iam.ListUsersInput{})
+	listUsersResp, err := a.iam.ListUsers(&iam.ListUsersInput{})
 	if err != nil {
 		return "", err
 	}
@@ -251,7 +237,7 @@ func (a *awsIamFetcher) determineAccountIdViaListUsers() (string, error) {
 
 func (a *awsIamFetcher) MustGetSecurityCredsForUser(username string) (accessKeyIds, mfaIds []string, hasLoginProfile bool) {
 	// access keys
-	listUsersResp, err := a.client.ListAccessKeys(&iam.ListAccessKeysInput{
+	listUsersResp, err := a.iam.ListAccessKeys(&iam.ListAccessKeysInput{
 		UserName: aws.String(username),
 	})
 	if err != nil {
@@ -262,7 +248,7 @@ func (a *awsIamFetcher) MustGetSecurityCredsForUser(username string) (accessKeyI
 	}
 
 	// mfa devices
-	mfaResp, err := a.client.ListMFADevices(&iam.ListMFADevicesInput{
+	mfaResp, err := a.iam.ListMFADevices(&iam.ListMFADevicesInput{
 		UserName: aws.String(username),
 	})
 	if err != nil {
@@ -273,7 +259,7 @@ func (a *awsIamFetcher) MustGetSecurityCredsForUser(username string) (accessKeyI
 	}
 
 	// login profile
-	_, err = a.client.GetLoginProfile(&iam.GetLoginProfileInput{
+	_, err = a.iam.GetLoginProfile(&iam.GetLoginProfileInput{
 		UserName: aws.String(username),
 	})
 	if err == nil {
@@ -303,7 +289,7 @@ func determineAccountIdViaDefaultSecurityGroup() (string, error) {
 }
 
 func (a *awsIamFetcher) MustGetNonDefaultPolicyVersions(policyArn string) []string {
-	listPolicyVersions, err := a.client.ListPolicyVersions(&iam.ListPolicyVersionsInput{
+	listPolicyVersions, err := a.iam.ListPolicyVersions(&iam.ListPolicyVersionsInput{
 		PolicyArn: aws.String(policyArn),
 	})
 	if err != nil {
