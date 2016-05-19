@@ -51,7 +51,7 @@ func sync(yamlData iamy.AccountData, awsData *iamy.AccountData, ui Ui) {
 	prefix := "        "
 	ui.Println(prefix + strings.Replace(awsCmds.String(), "\n", "\n"+prefix, -1))
 
-	r, err := prompt(fmt.Sprintf("\nExec all aws commands? (y/N) "))
+	r, err := prompt(fmt.Sprintf("\nRun all aws commands? (y/N) "))
 	if err != nil {
 		ui.Fatal(err)
 		return
@@ -60,6 +60,8 @@ func sync(yamlData iamy.AccountData, awsData *iamy.AccountData, ui Ui) {
 		for _, c := range awsCmds {
 			execCmd(c, ui)
 		}
+	} else {
+		ui.Println("Not running aws commands")
 	}
 }
 
