@@ -1,0 +1,12 @@
+package: github.com/99designs/iamy
+import:
+- package: github.com/aws/aws-sdk-go
+  subpackages:
+  - aws
+  - aws/session
+  - service/ec2
+  - service/iam
+  - service/iam/iamiface
+- package: github.com/mtibben/yamljsonmap
+- package: gopkg.in/alecthomas/kingpin.v2
+- package: gopkg.in/yaml.v2

@@ -1,1 +1,4 @@
-bin/*
+bin
+.idea
+*.iml
+vendor
