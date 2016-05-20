@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"regexp"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
@@ -14,6 +15,7 @@ var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 // An AwsFetcher fetches account data from AWS
 type AwsFetcher struct {
 	iam     *iamClient
+	s3      *s3Client
 	account *Account
 	data    AccountData
 }
@@ -23,6 +25,7 @@ func (a *AwsFetcher) init() error {
 
 	s := awsSession()
 	a.iam = newIamClient(s)
+	a.s3 = newS3Client(s)
 	if a.account, err = a.getAccount(); err != nil {
 		return err
 	}
@@ -39,17 +42,62 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 		return nil, err
 	}
 
-	err := a.fetchIamData()
-	if err != nil {
-		return nil, err
+	var wg sync.WaitGroup
+	var iamErr, s3Err error
+
+	log.Println("Fetching IAM data")
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		iamErr = a.fetchIamData()
+	}()
+
+	log.Println("Fetching S3 data")
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s3Err = a.fetchS3Data()
+	}()
+
+	wg.Wait()
+
+	if iamErr != nil {
+		return nil, iamErr
+	}
+	if s3Err != nil {
+		return nil, s3Err
 	}
 
 	return &a.data, nil
 }
 
-func (a *AwsFetcher) fetchIamData() error {
-	log.Println("Fetching IAM data")
+func (a *AwsFetcher) fetchS3Data() error {
+	buckets, err := a.s3.listAllBuckets()
+	if err != nil {
+		return err
+	}
+	for _, b := range buckets {
+		if b.policyJson == "" {
+			continue
+		}
 
+		policyDoc, err := NewPolicyDocumentFromEncodedJson(b.policyJson)
+		if err != nil {
+			return err
+		}
+
+		bp := BucketPolicy{
+			BucketName: b.name,
+			Policy:     policyDoc,
+		}
+
+		a.data.BucketPolicies = append(a.data.BucketPolicies, bp)
+	}
+
+	return nil
+}
+
+func (a *AwsFetcher) fetchIamData() error {
 	responses, err := a.iam.getAccountAuthorizationDetailsResponses(&iam.GetAccountAuthorizationDetailsInput{
 		Filter: aws.StringSlice([]string{
 			iam.EntityTypeUser,

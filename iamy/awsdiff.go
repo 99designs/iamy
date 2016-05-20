@@ -343,12 +343,35 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 	}
 }
 
+func (a *awsSyncCmdGenerator) updateBucketPolicies() {
+	for _, fromBucketPolicy := range a.from.BucketPolicies {
+		if found, _ := a.to.FindBucketPolicyByBucketName(fromBucketPolicy.BucketName); !found {
+			// remove bucket policy
+			a.cmds.Add("aws", "s3api", "delete-bucket-policy", "--bucket", fromBucketPolicy.BucketName)
+		}
+	}
+
+	for _, toBucketPolicy := range a.to.BucketPolicies {
+		isToAccountUpToDate := false
+		if found, fromBucketPolicy := a.from.FindBucketPolicyByBucketName(toBucketPolicy.BucketName); found {
+			if fromBucketPolicy.Policy.JsonString() == toBucketPolicy.Policy.JsonString() {
+				isToAccountUpToDate = true
+			}
+		}
+
+		if !isToAccountUpToDate {
+			a.cmds.Add("aws", "s3api", "put-bucket-policy", "--bucket", toBucketPolicy.BucketName, "--policy", toBucketPolicy.Policy.JsonString())
+		}
+	}
+}
+
 func (a *awsSyncCmdGenerator) GenerateCmds() CmdList {
 	a.deleteOldEntities()
 	a.updatePolicies()
 	a.updateRoles()
 	a.updateGroups()
 	a.updateUsers()
+	a.updateBucketPolicies()
 
 	return a.cmds
 }

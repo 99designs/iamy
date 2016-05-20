@@ -1,5 +1,5 @@
 hash: efb54a063701a532552396b8e5b83735ae6a4fc52bcc6080749920f6d60e3f55
-updated: 2016-05-20T14:45:43.361555698+10:00
+updated: 2016-05-20T14:50:30.294089749+10:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -16,6 +16,8 @@ imports:
   - service/iam
   - service/iam/iamiface
   - aws/awserr
+  - service/s3
+  - service/s3/s3iface
   - aws/credentials
   - aws/client
   - aws/corehandlers
@@ -29,6 +31,7 @@ imports:
   - private/signer/v4
   - private/waiter
   - private/protocol/query
+  - private/protocol/restxml
   - aws/credentials/ec2rolecreds
   - aws/ec2metadata
   - private/protocol/query/queryutil
