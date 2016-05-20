@@ -4,33 +4,51 @@ import (
 	"errors"
 	"log"
 	"regexp"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/iam"
 )
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 
-var Aws = awsIamFetcher{
-	iam: newIamClient(),
-}
+var Aws = awsFetcher{}
 
-type awsIamFetcher struct {
+type awsFetcher struct {
 	iam     *iamClient
 	account *Account
+	data    AccountData
 }
 
-func (a *awsIamFetcher) Fetch() (*AccountData, error) {
-	log.Println("Fetching AWS IAM data")
+func (a *awsFetcher) init() error {
 	var err error
-	data := AccountData{}
 
-	if data.Account, err = a.getAccount(); err != nil {
+	s := awsSession()
+	a.iam = newIamClient(s)
+	if a.account, err = a.getAccount(); err != nil {
+		return err
+	}
+	a.data = AccountData{
+		Account: a.account,
+	}
+
+	return nil
+}
+
+func (a *awsFetcher) Fetch() (*AccountData, error) {
+	if err := a.init(); err != nil {
 		return nil, err
 	}
-	a.account = data.Account
+
+	err := a.fetchIamData()
+	if err != nil {
+		return nil, err
+	}
+
+	return &a.data, nil
+}
+
+func (a *awsFetcher) fetchIamData() error {
+	log.Println("Fetching IAM data")
 
 	responses, err := a.iam.getAccountAuthorizationDetailsResponses(&iam.GetAccountAuthorizationDetailsInput{
 		Filter: aws.StringSlice([]string{
@@ -41,20 +59,20 @@ func (a *awsIamFetcher) Fetch() (*AccountData, error) {
 		}),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, resp := range responses {
-		err = a.populateData(resp, &data)
+		err = a.populateIamData(resp)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return &data, nil
+	return nil
 }
 
-func (a *awsIamFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *[]InlinePolicy) error {
+func (a *awsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *[]InlinePolicy) error {
 	for _, ip := range source {
 		doc, err := NewPolicyDocumentFromEncodedJson(*ip.PolicyDocument)
 		if err != nil {
@@ -69,17 +87,17 @@ func (a *awsIamFetcher) populateInlinePolicies(source []*iam.PolicyDetail, targe
 	return nil
 }
 
-func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOutput, data *AccountData) error {
+func (a *awsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
 	for _, userResp := range resp.UserDetailList {
 		if cfnResourceRegexp.MatchString(*userResp.UserName) {
 			log.Printf("Skipping CloudFormation generated user %s", *userResp.UserName)
 			continue
 		}
 
-		user := User{
+		user := User{iamService: iamService{
 			Name: *userResp.UserName,
 			Path: *userResp.Path,
-		}
+		}}
 
 		for _, g := range userResp.GroupList {
 			user.Groups = append(user.Groups, *g)
@@ -91,7 +109,7 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 			return err
 		}
 
-		data.Users = append(data.Users, user)
+		a.data.Users = append(a.data.Users, user)
 	}
 
 	for _, groupResp := range resp.GroupDetailList {
@@ -100,10 +118,10 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 			continue
 		}
 
-		group := Group{
+		group := Group{iamService: iamService{
 			Name: *groupResp.GroupName,
 			Path: *groupResp.Path,
-		}
+		}}
 
 		for _, p := range groupResp.AttachedManagedPolicies {
 			group.Policies = append(group.Policies, a.account.normalisePolicyArn(*p.PolicyArn))
@@ -112,7 +130,7 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 			return err
 		}
 
-		data.Groups = append(data.Groups, group)
+		a.data.Groups = append(a.data.Groups, group)
 	}
 
 	for _, roleResp := range resp.RoleDetailList {
@@ -121,10 +139,10 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 			continue
 		}
 
-		role := Role{
+		role := Role{iamService: iamService{
 			Name: *roleResp.RoleName,
 			Path: *roleResp.Path,
-		}
+		}}
 
 		var err error
 		role.AssumeRolePolicyDocument, err = NewPolicyDocumentFromEncodedJson(*roleResp.AssumeRolePolicyDocument)
@@ -138,7 +156,7 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 			return err
 		}
 
-		data.Roles = append(data.Roles, role)
+		a.data.Roles = append(a.data.Roles, role)
 	}
 
 	for _, policyResp := range resp.Policies {
@@ -154,11 +172,15 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 					return err
 				}
 
-				data.Policies = append(data.Policies, Policy{
-					Name:   *policyResp.PolicyName,
-					Path:   *policyResp.Path,
+				p := Policy{
+					iamService: iamService{
+						Name: *policyResp.PolicyName,
+						Path: *policyResp.Path,
+					},
 					Policy: doc,
-				})
+				}
+
+				a.data.Policies = append(a.data.Policies, p)
 			}
 		}
 	}
@@ -166,11 +188,14 @@ func (a *awsIamFetcher) populateData(resp *iam.GetAccountAuthorizationDetailsOut
 	return nil
 }
 
-func (a *awsIamFetcher) getAccount() (*Account, error) {
+func (a *awsFetcher) getAccount() (*Account, error) {
 	var err error
 	acct := Account{}
 
-	acct.Id, err = a.determineAccountId()
+	acct.Id, err = GetAwsAccountId(awsSession())
+	if err == aws.ErrMissingRegion {
+		return nil, errors.New("Error determining the AWS account id - check the AWS_REGION environment variable is set")
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -184,124 +209,4 @@ func (a *awsIamFetcher) getAccount() (*Account, error) {
 	}
 
 	return &acct, nil
-}
-
-func (a *awsIamFetcher) determineAccountId() (string, error) {
-	accountid, err := a.determineAccountIdViaGetUser()
-	if err == nil {
-		return accountid, nil
-	}
-
-	accountid, err = a.determineAccountIdViaListUsers()
-	if err == nil {
-		return accountid, nil
-	}
-
-	accountid, err = determineAccountIdViaDefaultSecurityGroup()
-	if err == nil {
-		return accountid, nil
-	}
-	if err == aws.ErrMissingRegion {
-		return "", errors.New("Error determining the AWS account id - check the AWS_REGION environment variable is set")
-	}
-
-	return "", errors.New("Can't determine the AWS account id")
-}
-
-func getAccountIdFromArn(arn string) string {
-	s := strings.Split(arn, ":")
-	return s[4]
-}
-
-// see http://stackoverflow.com/a/18124234
-func (a *awsIamFetcher) determineAccountIdViaGetUser() (string, error) {
-	getUserResp, err := a.iam.GetUser(&iam.GetUserInput{})
-	if err != nil {
-		return "", err
-	}
-
-	return getAccountIdFromArn(*getUserResp.User.Arn), nil
-}
-
-func (a *awsIamFetcher) determineAccountIdViaListUsers() (string, error) {
-	listUsersResp, err := a.iam.ListUsers(&iam.ListUsersInput{})
-	if err != nil {
-		return "", err
-	}
-	if len(listUsersResp.Users) == 0 {
-		return "", errors.New("No users found")
-	}
-
-	return getAccountIdFromArn(*listUsersResp.Users[0].Arn), nil
-}
-
-func (a *awsIamFetcher) MustGetSecurityCredsForUser(username string) (accessKeyIds, mfaIds []string, hasLoginProfile bool) {
-	// access keys
-	listUsersResp, err := a.iam.ListAccessKeys(&iam.ListAccessKeysInput{
-		UserName: aws.String(username),
-	})
-	if err != nil {
-		panic(err)
-	}
-	for _, m := range listUsersResp.AccessKeyMetadata {
-		accessKeyIds = append(accessKeyIds, *m.AccessKeyId)
-	}
-
-	// mfa devices
-	mfaResp, err := a.iam.ListMFADevices(&iam.ListMFADevicesInput{
-		UserName: aws.String(username),
-	})
-	if err != nil {
-		panic(err)
-	}
-	for _, m := range mfaResp.MFADevices {
-		mfaIds = append(mfaIds, *m.SerialNumber)
-	}
-
-	// login profile
-	_, err = a.iam.GetLoginProfile(&iam.GetLoginProfileInput{
-		UserName: aws.String(username),
-	})
-	if err == nil {
-		hasLoginProfile = true
-	}
-
-	return
-}
-
-// see http://stackoverflow.com/a/30578645
-func determineAccountIdViaDefaultSecurityGroup() (string, error) {
-	ec2Client := ec2.New(awsSession)
-
-	sg, err := ec2Client.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
-		GroupNames: []*string{
-			aws.String("default"),
-		},
-	})
-	if err != nil {
-		return "", err
-	}
-	if len(sg.SecurityGroups) == 0 {
-		return "", errors.New("No security groups found")
-	}
-
-	return *sg.SecurityGroups[0].OwnerId, nil
-}
-
-func (a *awsIamFetcher) MustGetNonDefaultPolicyVersions(policyArn string) []string {
-	listPolicyVersions, err := a.iam.ListPolicyVersions(&iam.ListPolicyVersionsInput{
-		PolicyArn: aws.String(policyArn),
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	versions := []string{}
-	for _, v := range listPolicyVersions.Versions {
-		if !*v.IsDefaultVersion {
-			versions = append(versions, *v.VersionId)
-		}
-	}
-
-	return versions
 }

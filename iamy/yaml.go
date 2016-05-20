@@ -13,8 +13,8 @@ import (
 )
 
 var Yaml = YamlLoadDumper{
-	pathTemplate: "{{.Account}}/{{.Resource.Type}}{{.Resource.Path}}{{.Resource.Name}}.yaml",
-	pathRegex:    regexp.MustCompile(`^(?P<account>.+)/(?P<entity>(user|group|policy|role))(?P<path>.*/)(?P<name>.+)\.yaml$`),
+	pathTemplate: "{{.Account}}/{{.Resource.ResourceType}}{{.Resource.ResourcePath}}{{.Resource.ResourceName}}.yaml",
+	pathRegex:    regexp.MustCompile(`^(?P<account>[^/]+)/(?P<entity>(user|group|policy|role))(?P<resourcepath>.*/)(?P<resourcename>[^/]+)\.yaml$`),
 }
 
 type YamlLoadDumper struct {
@@ -73,8 +73,8 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 
 			accountid := result["account"]
 			entity := result["entity"]
-			path := result["path"]
-			name := result["name"]
+			path := result["resourcepath"]
+			name := result["resourcename"]
 
 			if _, ok := accounts[accountid]; !ok {
 				accounts[accountid] = NewAccountData(accountid)
@@ -125,12 +125,14 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 		}
 	}
 
-	accts := []AccountData{}
-	for _, a := range accounts {
-		accts = append(accts, *a)
-	}
+	return accountMapToSlice(accounts), nil
+}
 
-	return accts, nil
+func accountMapToSlice(accounts map[string]*AccountData) (aa []AccountData) {
+	for _, a := range accounts {
+		aa = append(aa, *a)
+	}
+	return
 }
 
 func (f *YamlLoadDumper) Dump(accountData *AccountData, canDelete bool) error {
@@ -144,41 +146,30 @@ func (f *YamlLoadDumper) Dump(accountData *AccountData, canDelete bool) error {
 	}
 
 	for _, u := range accountData.Users {
-		if err := f.writeUser(accountData.Account, u); err != nil {
+		if err := f.writeResource(accountData.Account, u); err != nil {
 			return err
 		}
 	}
 
 	for _, policy := range accountData.Policies {
-		if err := f.writePolicy(accountData.Account, policy); err != nil {
+		if err := f.writeResource(accountData.Account, policy); err != nil {
 			return err
 		}
 	}
 
 	for _, group := range accountData.Groups {
-		if err := f.writeGroup(accountData.Account, group); err != nil {
+		if err := f.writeResource(accountData.Account, group); err != nil {
 			return err
 		}
 	}
 
 	for _, role := range accountData.Roles {
-		if err := f.writeRole(accountData.Account, role); err != nil {
+		if err := f.writeResource(accountData.Account, role); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func (f *YamlLoadDumper) writeUser(a *Account, u User) error {
-	path, err := renderPath(f.pathTemplate, map[string]interface{}{
-		"Account":  a,
-		"Resource": u,
-	})
-	if err != nil {
-		return err
-	}
-	return writeYamlFile(filepath.Join(f.Dir, path), u)
 }
 
 func (f *YamlLoadDumper) unmarshalYamlFile(relativePath string, entity interface{}) error {
@@ -195,51 +186,23 @@ func (f *YamlLoadDumper) unmarshalYamlFile(relativePath string, entity interface
 	return nil
 }
 
-func (f *YamlLoadDumper) writeGroup(a *Account, g Group) error {
-	path, err := renderPath(f.pathTemplate, map[string]interface{}{
+func (f *YamlLoadDumper) writeResource(a *Account, thing AwsResource) error {
+	path := f.mustRenderPath(map[string]interface{}{
 		"Account":  a,
-		"Resource": g,
+		"Resource": thing,
 	})
-	if err != nil {
-		return err
-	}
-	return writeYamlFile(filepath.Join(f.Dir, path), g)
+
+	return writeYamlFile(filepath.Join(f.Dir, path), thing)
 }
 
-func (f *YamlLoadDumper) writePolicy(a *Account, p Policy) error {
-	path, err := renderPath(f.pathTemplate, map[string]interface{}{
-		"Account":  a,
-		"Resource": p,
-	})
-	if err != nil {
-		return err
-	}
-	return writeYamlFile(filepath.Join(f.Dir, path), p)
-}
-
-func (f *YamlLoadDumper) writeRole(a *Account, r Role) error {
-	path, err := renderPath(f.pathTemplate, map[string]interface{}{
-		"Account":  a,
-		"Resource": r,
-	})
-	if err != nil {
-		return err
-	}
-	return writeYamlFile(filepath.Join(f.Dir, path), r)
-}
-
-func renderPath(tpl string, context map[string]interface{}) (string, error) {
-	t, err := template.New("tpl").Parse(tpl)
-	if err != nil {
-		return "", err
-	}
-
+func (f *YamlLoadDumper) mustRenderPath(context map[string]interface{}) string {
+	t := template.Must(template.New("pathTemplate").Parse(f.pathTemplate))
 	buf := &bytes.Buffer{}
-	if err = t.Execute(buf, context); err != nil {
-		return "", err
+	if err := t.Execute(buf, context); err != nil {
+		panic(err)
 	}
 
-	return buf.String(), nil
+	return buf.String()
 }
 
 func writeYamlFile(path string, thing interface{}) error {

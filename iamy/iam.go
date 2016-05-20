@@ -7,15 +7,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 )
 
-var awsSession = session.New()
-
 type iamClient struct {
 	iamiface.IAMAPI
 }
 
-func newIamClient() *iamClient {
+func newIamClient(sess *session.Session) *iamClient {
 	return &iamClient{
-		iam.New(awsSession),
+		iam.New(sess),
 	}
 }
 
@@ -43,4 +41,56 @@ func (c *iamClient) getAccountAuthorizationDetailsResponses(input *iam.GetAccoun
 	}
 
 	return responses, nil
+}
+
+func (c *iamClient) MustGetNonDefaultPolicyVersions(policyArn string) []string {
+	listPolicyVersions, err := c.ListPolicyVersions(&iam.ListPolicyVersionsInput{
+		PolicyArn: aws.String(policyArn),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	versions := []string{}
+	for _, v := range listPolicyVersions.Versions {
+		if !*v.IsDefaultVersion {
+			versions = append(versions, *v.VersionId)
+		}
+	}
+
+	return versions
+}
+
+func (c *iamClient) MustGetSecurityCredsForUser(username string) (accessKeyIds, mfaIds []string, hasLoginProfile bool) {
+	// access keys
+	listUsersResp, err := c.ListAccessKeys(&iam.ListAccessKeysInput{
+		UserName: aws.String(username),
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, m := range listUsersResp.AccessKeyMetadata {
+		accessKeyIds = append(accessKeyIds, *m.AccessKeyId)
+	}
+
+	// mfa devices
+	mfaResp, err := c.ListMFADevices(&iam.ListMFADevicesInput{
+		UserName: aws.String(username),
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, m := range mfaResp.MFADevices {
+		mfaIds = append(mfaIds, *m.SerialNumber)
+	}
+
+	// login profile
+	_, err = c.GetLoginProfile(&iam.GetLoginProfileInput{
+		UserName: aws.String(username),
+	})
+	if err == nil {
+		hasLoginProfile = true
+	}
+
+	return
 }

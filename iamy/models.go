@@ -92,52 +92,52 @@ func NewAccountFromString(s string) *Account {
 }
 
 type AwsResource interface {
-	Type() string
-	NameString() string
-	PathString() string
+	Service() string
+	ResourceType() string
+	ResourceName() string
+	ResourcePath() string
 }
 
 func Arn(r AwsResource, a *Account) string {
-	return a.arnFor(r.Type(), r.PathString(), r.NameString())
+	return a.arnFor(r.ResourceType(), r.ResourcePath(), r.ResourceName())
+}
+
+type iamService struct {
+	Name string `yaml:"-"`
+	Path string `yaml:"-"`
+}
+
+func (s iamService) Service() string {
+	return "iam"
+}
+
+func (s iamService) ResourceName() string {
+	return s.Name
+}
+
+func (s iamService) ResourcePath() string {
+	return s.Path
 }
 
 type User struct {
-	Name           string         `yaml:"-"`
-	Path           string         `yaml:"-"`
+	iamService     `yaml:"-"`
 	Groups         []string       `yaml:"Groups,omitempty"`
 	InlinePolicies []InlinePolicy `yaml:"InlinePolicies,omitempty"`
 	Policies       []string       `yaml:"Policies,omitempty"`
 }
 
-func (u User) Type() string {
+func (u User) ResourceType() string {
 	return "user"
 }
 
-func (u User) NameString() string {
-	return u.Name
-}
-
-func (u User) PathString() string {
-	return u.Path
-}
-
 type Group struct {
-	Name           string         `yaml:"-"`
-	Path           string         `yaml:"-"`
+	iamService     `yaml:"-"`
 	InlinePolicies []InlinePolicy `yaml:"InlinePolicies,omitempty"`
 	Policies       []string       `yaml:"Policies,omitempty"`
 }
 
-func (g Group) Type() string {
+func (g Group) ResourceType() string {
 	return "group"
-}
-
-func (g Group) NameString() string {
-	return g.Name
-}
-
-func (g Group) PathString() string {
-	return g.Path
 }
 
 type InlinePolicy struct {
@@ -146,41 +146,23 @@ type InlinePolicy struct {
 }
 
 type Policy struct {
-	Name   string         `yaml:"-"`
-	Path   string         `yaml:"-"`
-	Policy PolicyDocument `yaml:"Policy"`
+	iamService `yaml:"-"`
+	Policy     PolicyDocument `yaml:"Policy"`
 }
 
-func (p Policy) Type() string {
+func (p Policy) ResourceType() string {
 	return "policy"
 }
 
-func (p Policy) NameString() string {
-	return p.Name
-}
-
-func (p Policy) PathString() string {
-	return p.Path
-}
-
 type Role struct {
-	Name                     string         `yaml:"-"`
-	Path                     string         `yaml:"-"`
+	iamService               `yaml:"-"`
 	AssumeRolePolicyDocument PolicyDocument `yaml:"AssumeRolePolicyDocument"`
 	InlinePolicies           []InlinePolicy `yaml:"InlinePolicies,omitempty"`
 	Policies                 []string       `yaml:"Policies,omitempty"`
 }
 
-func (r Role) Type() string {
+func (r Role) ResourceType() string {
 	return "role"
-}
-
-func (r Role) NameString() string {
-	return r.Name
-}
-
-func (r Role) PathString() string {
-	return r.Path
 }
 
 type AccountData struct {
