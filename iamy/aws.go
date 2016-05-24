@@ -11,15 +11,14 @@ import (
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 
-var Aws = awsFetcher{}
-
-type awsFetcher struct {
+// An AwsFetcher fetches account data from AWS
+type AwsFetcher struct {
 	iam     *iamClient
 	account *Account
 	data    AccountData
 }
 
-func (a *awsFetcher) init() error {
+func (a *AwsFetcher) init() error {
 	var err error
 
 	s := awsSession()
@@ -34,7 +33,8 @@ func (a *awsFetcher) init() error {
 	return nil
 }
 
-func (a *awsFetcher) Fetch() (*AccountData, error) {
+// Fetch queries AWS for account data
+func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	if err := a.init(); err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (a *awsFetcher) Fetch() (*AccountData, error) {
 	return &a.data, nil
 }
 
-func (a *awsFetcher) fetchIamData() error {
+func (a *AwsFetcher) fetchIamData() error {
 	log.Println("Fetching IAM data")
 
 	responses, err := a.iam.getAccountAuthorizationDetailsResponses(&iam.GetAccountAuthorizationDetailsInput{
@@ -72,7 +72,7 @@ func (a *awsFetcher) fetchIamData() error {
 	return nil
 }
 
-func (a *awsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *[]InlinePolicy) error {
+func (a *AwsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *[]InlinePolicy) error {
 	for _, ip := range source {
 		doc, err := NewPolicyDocumentFromEncodedJson(*ip.PolicyDocument)
 		if err != nil {
@@ -87,7 +87,7 @@ func (a *awsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *
 	return nil
 }
 
-func (a *awsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
+func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
 	for _, userResp := range resp.UserDetailList {
 		if cfnResourceRegexp.MatchString(*userResp.UserName) {
 			log.Printf("Skipping CloudFormation generated user %s", *userResp.UserName)
@@ -188,7 +188,7 @@ func (a *awsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 	return nil
 }
 
-func (a *awsFetcher) getAccount() (*Account, error) {
+func (a *AwsFetcher) getAccount() (*Account, error) {
 	var err error
 	acct := Account{}
 

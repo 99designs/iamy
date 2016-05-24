@@ -8,13 +8,16 @@ type PullCommandInput struct {
 }
 
 func PullCommand(ui Ui, input PullCommandInput) {
-	data, err := iamy.Aws.Fetch()
+	aws := iamy.AwsFetcher{}
+	data, err := aws.Fetch()
 	if err != nil {
 		ui.Error.Fatal(err)
 	}
 
-	iamy.Yaml.Dir = input.Dir
-	err = iamy.Yaml.Dump(data, input.CanDelete)
+	yaml := iamy.YamlLoadDumper{
+		Dir: input.Dir,
+	}
+	err = yaml.Dump(data, input.CanDelete)
 	if err != nil {
 		ui.Error.Fatal(err)
 	}

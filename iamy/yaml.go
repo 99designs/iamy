@@ -12,15 +12,19 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var Yaml = YamlLoadDumper{
-	pathTemplate: "{{.Account}}/{{.Resource.ResourceType}}{{.Resource.ResourcePath}}{{.Resource.ResourceName}}.yaml",
-	pathRegex:    regexp.MustCompile(`^(?P<account>[^/]+)/(?P<entity>(user|group|policy|role))(?P<resourcepath>.*/)(?P<resourcename>[^/]+)\.yaml$`),
+const pathTemplateBlob = "{{.Account}}/{{.Resource.ResourceType}}{{.Resource.ResourcePath}}{{.Resource.ResourceName}}.yaml"
+const pathRegexBlob = `^(?P<account>[^/]+)/(?P<entity>(user|group|policy|role))(?P<resourcepath>.*/)(?P<resourcename>[^/]+)\.yaml$`
+
+var pathTemplate = template.Must(template.New("").Parse(pathTemplateBlob))
+var pathRegex = regexp.MustCompile(pathRegexBlob)
+
+type pathTemplateData struct {
+	Account  *Account
+	Resource AwsResource
 }
 
 type YamlLoadDumper struct {
-	pathTemplate string
-	pathRegex    *regexp.Regexp
-	Dir          string
+	Dir string
 }
 
 func (a *YamlLoadDumper) getFilesRecursively() ([]string, error) {
@@ -38,6 +42,7 @@ func (a *YamlLoadDumper) getFilesRecursively() ([]string, error) {
 		if !info.IsDir() {
 			paths = append(paths, path)
 		}
+
 		return nil
 	})
 
@@ -57,6 +62,7 @@ func namedMatch(r *regexp.Regexp, s string) (bool, map[string]string) {
 	return true, result
 }
 
+// Load reads yaml files in a.Dir and returns the AccountData
 func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 	log.Println("Loading YAML IAM data from", a.Dir)
 	accounts := map[string]*AccountData{}
@@ -67,8 +73,7 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 	}
 
 	for _, fp := range allFiles {
-
-		if matched, result := namedMatch(a.pathRegex, fp); matched {
+		if matched, result := namedMatch(pathRegex, fp); matched {
 			log.Println("Loading", fp)
 
 			accountid := result["account"]
@@ -135,6 +140,7 @@ func accountMapToSlice(accounts map[string]*AccountData) (aa []AccountData) {
 	return
 }
 
+// Dump writes AccountData into yaml files in the a.Dir directory
 func (f *YamlLoadDumper) Dump(accountData *AccountData, canDelete bool) error {
 	destDir := filepath.Join(f.Dir, accountData.Account.String())
 	log.Println("Dumping YAML IAM data to", f.Dir)
@@ -186,19 +192,15 @@ func (f *YamlLoadDumper) unmarshalYamlFile(relativePath string, entity interface
 	return nil
 }
 
-func (f *YamlLoadDumper) writeResource(a *Account, thing AwsResource) error {
-	path := f.mustRenderPath(map[string]interface{}{
-		"Account":  a,
-		"Resource": thing,
-	})
+func (f *YamlLoadDumper) writeResource(a *Account, r AwsResource) error {
+	path := mustExecutePathTemplate(pathTemplateData{a, r})
 
-	return writeYamlFile(filepath.Join(f.Dir, path), thing)
+	return writeYamlFile(filepath.Join(f.Dir, path), r)
 }
 
-func (f *YamlLoadDumper) mustRenderPath(context map[string]interface{}) string {
-	t := template.Must(template.New("pathTemplate").Parse(f.pathTemplate))
+func mustExecutePathTemplate(data interface{}) string {
 	buf := &bytes.Buffer{}
-	if err := t.Execute(buf, context); err != nil {
+	if err := pathTemplate.Execute(buf, data); err != nil {
 		panic(err)
 	}
 

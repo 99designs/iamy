@@ -144,7 +144,6 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 			a.cmds.Add("aws", "iam", "delete-user", "--user-name", fromUser.Name)
 		}
 	}
-
 }
 
 func (a *awsSyncCmdGenerator) updatePolicies() {

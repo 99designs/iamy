@@ -43,20 +43,21 @@ func TestRoundTrip(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	Yaml.Dir = filepath.Join(d, "testdata")
-	accountData, err := Yaml.Load()
+	y := YamlLoadDumper{}
+	y.Dir = filepath.Join(d, "testdata")
+	accountData, err := y.Load()
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
 	testdir := newTmpDir()
-	Yaml.Dir = testdir
-	err = Yaml.Dump(&accountData[0], false)
+	y.Dir = testdir
+	err = y.Dump(&accountData[0], false)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	yamlDirData := readDir(Yaml.Dir)
+	yamlDirData := readDir(y.Dir)
 	testdirData := readDir(testdir)
 	eq := reflect.DeepEqual(yamlDirData, testdirData)
 	if !eq {

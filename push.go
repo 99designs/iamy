@@ -15,14 +15,18 @@ type PushCommandInput struct {
 }
 
 func PushCommand(ui Ui, input PushCommandInput) {
-	iamy.Yaml.Dir = input.Dir
-	allDataFromYaml, err := iamy.Yaml.Load()
+	yaml := iamy.YamlLoadDumper{
+		Dir: input.Dir,
+	}
+	aws := iamy.AwsFetcher{}
+
+	allDataFromYaml, err := yaml.Load()
 	if err != nil {
 		ui.Fatal(err)
 		return
 	}
 
-	dataFromAws, err := iamy.Aws.Fetch()
+	dataFromAws, err := aws.Fetch()
 	if err != nil {
 		ui.Fatal(err)
 		return
