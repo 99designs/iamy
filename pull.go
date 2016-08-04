@@ -1,6 +1,10 @@
 package main
 
-import "github.com/99designs/iamy/iamy"
+import (
+	"fmt"
+
+	"github.com/99designs/iamy/iamy"
+)
 
 type PullCommandInput struct {
 	Dir       string
@@ -11,7 +15,7 @@ func PullCommand(ui Ui, input PullCommandInput) {
 	aws := iamy.AwsFetcher{}
 	data, err := aws.Fetch()
 	if err != nil {
-		ui.Error.Fatal(err)
+		ui.Error.Fatal(fmt.Printf("%s", err))
 	}
 
 	yaml := iamy.YamlLoadDumper{

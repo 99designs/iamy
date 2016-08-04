@@ -1,12 +1,13 @@
 package iamy
 
 import (
-	"errors"
 	"log"
 	"regexp"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/pkg/errors"
 )
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
@@ -14,6 +15,7 @@ var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 // An AwsFetcher fetches account data from AWS
 type AwsFetcher struct {
 	iam     *iamClient
+	s3      *s3Client
 	account *Account
 	data    AccountData
 }
@@ -23,6 +25,7 @@ func (a *AwsFetcher) init() error {
 
 	s := awsSession()
 	a.iam = newIamClient(s)
+	a.s3 = newS3Client(s)
 	if a.account, err = a.getAccount(); err != nil {
 		return err
 	}
@@ -36,20 +39,65 @@ func (a *AwsFetcher) init() error {
 // Fetch queries AWS for account data
 func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	if err := a.init(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error in init")
 	}
 
-	err := a.fetchIamData()
-	if err != nil {
-		return nil, err
+	var wg sync.WaitGroup
+	var iamErr, s3Err error
+
+	log.Println("Fetching IAM data")
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		iamErr = a.fetchIamData()
+	}()
+
+	log.Println("Fetching S3 data")
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s3Err = a.fetchS3Data()
+	}()
+
+	wg.Wait()
+
+	if iamErr != nil {
+		return nil, errors.Wrap(iamErr, "Error fetching IAM error")
+	}
+	if s3Err != nil {
+		return nil, errors.Wrap(s3Err, "Error fetching S3 data")
 	}
 
 	return &a.data, nil
 }
 
-func (a *AwsFetcher) fetchIamData() error {
-	log.Println("Fetching IAM data")
+func (a *AwsFetcher) fetchS3Data() error {
+	buckets, err := a.s3.listAllBuckets()
+	if err != nil {
+		return errors.Wrap(err, "Error listing buckets")
+	}
+	for _, b := range buckets {
+		if b.policyJson == "" {
+			continue
+		}
 
+		policyDoc, err := NewPolicyDocumentFromEncodedJson(b.policyJson)
+		if err != nil {
+			return errors.Wrap(err, "Error creating Policy document")
+		}
+
+		bp := BucketPolicy{
+			BucketName: b.name,
+			Policy:     policyDoc,
+		}
+
+		a.data.BucketPolicies = append(a.data.BucketPolicies, bp)
+	}
+
+	return nil
+}
+
+func (a *AwsFetcher) fetchIamData() error {
 	responses, err := a.iam.getAccountAuthorizationDetailsResponses(&iam.GetAccountAuthorizationDetailsInput{
 		Filter: aws.StringSlice([]string{
 			iam.EntityTypeUser,

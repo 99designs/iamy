@@ -12,8 +12,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const pathTemplateBlob = "{{.Account}}/{{.Resource.ResourceType}}{{.Resource.ResourcePath}}{{.Resource.ResourceName}}.yaml"
-const pathRegexBlob = `^(?P<account>[^/]+)/(?P<entity>(user|group|policy|role))(?P<resourcepath>.*/)(?P<resourcename>[^/]+)\.yaml$`
+const pathTemplateBlob = "{{.Account}}/{{.Resource.Service}}/{{.Resource.ResourceType}}{{.Resource.ResourcePath}}{{.Resource.ResourceName}}.yaml"
+const pathRegexBlob = `^(?P<account>[^/]+)/(?P<entity>(iam/user|iam/group|iam/policy|iam/role|s3))(?P<resourcepath>.*/)(?P<resourcename>[^/]+)\.yaml$`
 
 var pathTemplate = template.Must(template.New("").Parse(pathTemplateBlob))
 var pathRegex = regexp.MustCompile(pathRegexBlob)
@@ -23,6 +23,7 @@ type pathTemplateData struct {
 	Resource AwsResource
 }
 
+// A YamlLoadDumper loads and dumps account data in yaml files
 type YamlLoadDumper struct {
 	Dir string
 }
@@ -85,46 +86,38 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 				accounts[accountid] = NewAccountData(accountid)
 			}
 
+			var err error
+			nameAndPath := iamService{Name: name, Path: path}
+
 			switch entity {
-			case "user":
-				u := User{}
-				err := a.unmarshalYamlFile(fp, &u)
-				if err != nil {
-					return nil, err
-				}
-				u.Name = name
-				u.Path = path
+			case "iam/user":
+				u := User{iamService: nameAndPath}
+				err = a.unmarshalYamlFile(fp, &u)
 				accounts[accountid].addUser(u)
-			case "group":
-				g := Group{}
-				err := a.unmarshalYamlFile(fp, &g)
-				if err != nil {
-					return nil, err
-				}
-				g.Name = name
-				g.Path = path
+			case "iam/group":
+				g := Group{iamService: nameAndPath}
+				err = a.unmarshalYamlFile(fp, &g)
 				accounts[accountid].addGroup(g)
-			case "role":
-				r := Role{}
-				err := a.unmarshalYamlFile(fp, &r)
-				if err != nil {
-					return nil, err
-				}
-				r.Name = name
-				r.Path = path
+			case "iam/role":
+				r := Role{iamService: nameAndPath}
+				err = a.unmarshalYamlFile(fp, &r)
 				accounts[accountid].addRole(r)
-			case "policy":
-				p := Policy{}
-				err := a.unmarshalYamlFile(fp, &p)
-				if err != nil {
-					return nil, err
-				}
-				p.Name = name
-				p.Path = path
+			case "iam/policy":
+				p := Policy{iamService: nameAndPath}
+				err = a.unmarshalYamlFile(fp, &p)
 				accounts[accountid].addPolicy(p)
+			case "s3":
+				bp := BucketPolicy{BucketName: name}
+				err = a.unmarshalYamlFile(fp, &bp)
+				accounts[accountid].addBucketPolicy(bp)
 			default:
 				panic("Unexpected entity")
 			}
+
+			if err != nil {
+				return nil, err
+			}
+
 		} else {
 			log.Println("Skipping", fp)
 		}
@@ -171,6 +164,12 @@ func (f *YamlLoadDumper) Dump(accountData *AccountData, canDelete bool) error {
 
 	for _, role := range accountData.Roles {
 		if err := f.writeResource(accountData.Account, role); err != nil {
+			return err
+		}
+	}
+
+	for _, bucketPolicy := range accountData.BucketPolicies {
+		if err := f.writeResource(accountData.Account, bucketPolicy); err != nil {
 			return err
 		}
 	}

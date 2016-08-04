@@ -165,12 +165,34 @@ func (r Role) ResourceType() string {
 	return "role"
 }
 
+type BucketPolicy struct {
+	BucketName string         `yaml:"-"`
+	Policy     PolicyDocument `yaml:"Policy"`
+}
+
+func (u BucketPolicy) Service() string {
+	return "s3"
+}
+
+func (bp BucketPolicy) ResourceType() string {
+	return ""
+}
+
+func (p BucketPolicy) ResourceName() string {
+	return p.BucketName
+}
+
+func (p BucketPolicy) ResourcePath() string {
+	return "/"
+}
+
 type AccountData struct {
-	Account  *Account
-	Users    []User
-	Groups   []Group
-	Roles    []Role
-	Policies []Policy
+	Account        *Account
+	Users          []User
+	Groups         []Group
+	Roles          []Role
+	Policies       []Policy
+	BucketPolicies []BucketPolicy
 }
 
 func NewAccountData(account string) *AccountData {
@@ -197,6 +219,10 @@ func (a *AccountData) addRole(r Role) {
 
 func (a *AccountData) addPolicy(p Policy) {
 	a.Policies = append(a.Policies, p)
+}
+
+func (a *AccountData) addBucketPolicy(bp BucketPolicy) {
+	a.BucketPolicies = append(a.BucketPolicies, bp)
 }
 
 func (ad *AccountData) FindUserByName(name, path string) (bool, *User) {
@@ -232,6 +258,16 @@ func (ad *AccountData) FindRoleByName(name, path string) (bool, *Role) {
 func (ad *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
 	for _, p := range ad.Policies {
 		if p.Name == name && p.Path == path {
+			return true, &p
+		}
+	}
+
+	return false, nil
+}
+
+func (ad *AccountData) FindBucketPolicyByBucketName(name string) (bool, *BucketPolicy) {
+	for _, p := range ad.BucketPolicies {
+		if p.BucketName == name {
 			return true, &p
 		}
 	}
