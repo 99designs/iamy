@@ -1,13 +1,13 @@
 package iamy
 
 import (
-	"errors"
 	"log"
 	"regexp"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/pkg/errors"
 )
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
@@ -39,7 +39,7 @@ func (a *AwsFetcher) init() error {
 // Fetch queries AWS for account data
 func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	if err := a.init(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error in init")
 	}
 
 	var wg sync.WaitGroup
@@ -62,10 +62,10 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	wg.Wait()
 
 	if iamErr != nil {
-		return nil, iamErr
+		return nil, errors.Wrap(iamErr, "Error fetching IAM error")
 	}
 	if s3Err != nil {
-		return nil, s3Err
+		return nil, errors.Wrap(s3Err, "Error fetching S3 data")
 	}
 
 	return &a.data, nil
@@ -74,7 +74,7 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 func (a *AwsFetcher) fetchS3Data() error {
 	buckets, err := a.s3.listAllBuckets()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Error listing buckets")
 	}
 	for _, b := range buckets {
 		if b.policyJson == "" {
@@ -83,7 +83,7 @@ func (a *AwsFetcher) fetchS3Data() error {
 
 		policyDoc, err := NewPolicyDocumentFromEncodedJson(b.policyJson)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Error creating Policy document")
 		}
 
 		bp := BucketPolicy{

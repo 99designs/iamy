@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
+	"github.com/pkg/errors"
 )
 
 const NoSuchBucketPolicyErrCode = "NoSuchBucketPolicy"
@@ -92,7 +93,7 @@ func (c *s3Client) populateBucket(b *bucket) error {
 func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 	bucketListResp, err := c.ListBuckets(&s3.ListBucketsInput{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error while calling ListBuckets")
 	}
 
 	var wg sync.WaitGroup
@@ -108,7 +109,7 @@ func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 			defer wg.Done()
 			err = c.populateBucket(&b)
 			if err != nil {
-				oneOfTheErrorsDuringPopulation = err
+				oneOfTheErrorsDuringPopulation = errors.New(fmt.Sprintf("Error while getting details for S3 bucket %s: %s", b.name, err))
 			}
 		}()
 	}

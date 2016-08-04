@@ -1,5 +1,5 @@
-hash: efb54a063701a532552396b8e5b83735ae6a4fc52bcc6080749920f6d60e3f55
-updated: 2016-05-20T14:50:30.294089749+10:00
+hash: 9d162745937d6acc14fd4e0856e032712eda907d228800e675c0e78d261870a8
+updated: 2016-08-04T14:46:55.547185276+10:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -43,6 +43,8 @@ imports:
   version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/mtibben/yamljsonmap
   version: 61ad1237ec8b3d5057d5cccfdc8ab2e3341ab4be
+- name: github.com/pkg/errors
+  version: 2a9be18ecd8c148be18be08a811e33809206da19
 - name: gopkg.in/alecthomas/kingpin.v2
   version: 8cccfa8eb2e3183254457fb1749b2667fbc364c7
 - name: gopkg.in/yaml.v2
