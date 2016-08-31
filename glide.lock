@@ -1,5 +1,5 @@
-hash: 9d162745937d6acc14fd4e0856e032712eda907d228800e675c0e78d261870a8
-updated: 2016-08-04T14:46:55.547185276+10:00
+hash: a16497b7740f1b8224f4c590d200975cafd9b2b2a287bee941ce4329cd995947
+updated: 2016-09-01T11:52:37.703686061+10:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -8,45 +8,48 @@ imports:
 - name: github.com/alecthomas/units
   version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
 - name: github.com/aws/aws-sdk-go
-  version: 83c400dd354759bdb2fb49f9c6e53cee3e0c9484
+  version: d6b4bfeba6997082629986cac2a932a233ba745e
   subpackages:
   - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/request
   - aws/session
+  - aws/signer/v4
+  - private/endpoints
+  - private/protocol
+  - private/protocol/ec2query
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - private/waiter
   - service/ec2
   - service/iam
   - service/iam/iamiface
-  - aws/awserr
   - service/s3
   - service/s3/s3iface
-  - aws/credentials
-  - aws/client
-  - aws/corehandlers
-  - aws/defaults
-  - aws/request
-  - private/endpoints
-  - aws/awsutil
-  - aws/client/metadata
-  - private/protocol
-  - private/protocol/ec2query
-  - private/signer/v4
-  - private/waiter
-  - private/protocol/query
-  - private/protocol/restxml
-  - aws/credentials/ec2rolecreds
-  - aws/ec2metadata
-  - private/protocol/query/queryutil
-  - private/protocol/xml/xmlutil
-  - private/protocol/rest
+  - service/sts
+- name: github.com/cloudfoundry-incubator/candiedyaml
+  version: 99c3df83b51532e3615f851d8c2dbb638f5313bf
+- name: github.com/ghodss/yaml
+  version: aa0c862057666179de291b67d9f093d12b5a8473
 - name: github.com/go-ini/ini
-  version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
+  version: 6e4869b434bd001f6983749881c7ead3545887d8
 - name: github.com/jmespath/go-jmespath
-  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
-- name: github.com/mtibben/yamljsonmap
-  version: 61ad1237ec8b3d5057d5cccfdc8ab2e3341ab4be
+  version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/pkg/errors
-  version: 2a9be18ecd8c148be18be08a811e33809206da19
+  version: 17b591df37844cde689f4d5813e5cea0927d8dd2
 - name: gopkg.in/alecthomas/kingpin.v2
-  version: 8cccfa8eb2e3183254457fb1749b2667fbc364c7
-- name: gopkg.in/yaml.v2
-  version: a83829b6f1293c91addabc89d0571c246397bbf4
-devImports: []
+  version: e9044be3ab2a8e11d4e1f418d12f0790d57e8d70
+testImports: []
