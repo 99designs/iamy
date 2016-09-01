@@ -1,63 +1,10 @@
 package iamy
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
-
-	"github.com/mtibben/yamljsonmap"
 )
-
-type PolicyDocument yamljsonmap.StringKeyMap
-
-func (p *PolicyDocument) Encode() string {
-	return url.QueryEscape(string(p.json()))
-}
-
-func (p PolicyDocument) json() []byte {
-	jsonBytes, err := json.Marshal(yamljsonmap.StringKeyMap(p))
-	if err != nil {
-		panic(err.Error())
-	}
-	return jsonBytes
-}
-
-func (p *PolicyDocument) JsonString() string {
-	var out bytes.Buffer
-	json.Indent(&out, p.json(), "", "  ")
-	return out.String()
-}
-
-func (m PolicyDocument) MarshalJSON() ([]byte, error) {
-	return json.Marshal(yamljsonmap.StringKeyMap(m))
-}
-
-func (m *PolicyDocument) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var n yamljsonmap.StringKeyMap
-	if err := unmarshal(&n); err != nil {
-		return err
-	}
-	*m = PolicyDocument(n)
-
-	return nil
-}
-
-func NewPolicyDocumentFromEncodedJson(encoded string) (PolicyDocument, error) {
-	jsonString, err := url.QueryUnescape(encoded)
-	if err != nil {
-		return nil, err
-	}
-
-	var doc PolicyDocument
-	if err = json.Unmarshal([]byte(jsonString), &doc); err != nil {
-		return nil, err
-	}
-
-	return doc, nil
-}
 
 type Account struct {
 	Id    string
@@ -103,8 +50,8 @@ func Arn(r AwsResource, a *Account) string {
 }
 
 type iamService struct {
-	Name string `yaml:"-"`
-	Path string `yaml:"-"`
+	Name string `json:"-"`
+	Path string `json:"-"`
 }
 
 func (s iamService) Service() string {
@@ -120,10 +67,10 @@ func (s iamService) ResourcePath() string {
 }
 
 type User struct {
-	iamService     `yaml:"-"`
-	Groups         []string       `yaml:"Groups,omitempty"`
-	InlinePolicies []InlinePolicy `yaml:"InlinePolicies,omitempty"`
-	Policies       []string       `yaml:"Policies,omitempty"`
+	iamService     `json:"-"`
+	Groups         []string       `json:"Groups,omitempty"`
+	InlinePolicies []InlinePolicy `json:"InlinePolicies,omitempty"`
+	Policies       []string       `json:"Policies,omitempty"`
 }
 
 func (u User) ResourceType() string {
@@ -131,9 +78,9 @@ func (u User) ResourceType() string {
 }
 
 type Group struct {
-	iamService     `yaml:"-"`
-	InlinePolicies []InlinePolicy `yaml:"InlinePolicies,omitempty"`
-	Policies       []string       `yaml:"Policies,omitempty"`
+	iamService     `json:"-"`
+	InlinePolicies []InlinePolicy `json:"InlinePolicies,omitempty"`
+	Policies       []string       `json:"Policies,omitempty"`
 }
 
 func (g Group) ResourceType() string {
@@ -141,13 +88,13 @@ func (g Group) ResourceType() string {
 }
 
 type InlinePolicy struct {
-	Name   string         `yaml:"Name"`
-	Policy PolicyDocument `yaml:"Policy"`
+	Name   string          `json:"Name"`
+	Policy *PolicyDocument `json:"Policy"`
 }
 
 type Policy struct {
-	iamService `yaml:"-"`
-	Policy     PolicyDocument `yaml:"Policy"`
+	iamService `json:"-"`
+	Policy     *PolicyDocument `json:"Policy"`
 }
 
 func (p Policy) ResourceType() string {
@@ -155,10 +102,10 @@ func (p Policy) ResourceType() string {
 }
 
 type Role struct {
-	iamService               `yaml:"-"`
-	AssumeRolePolicyDocument PolicyDocument `yaml:"AssumeRolePolicyDocument"`
-	InlinePolicies           []InlinePolicy `yaml:"InlinePolicies,omitempty"`
-	Policies                 []string       `yaml:"Policies,omitempty"`
+	iamService               `json:"-"`
+	AssumeRolePolicyDocument *PolicyDocument `json:"AssumeRolePolicyDocument"`
+	InlinePolicies           []InlinePolicy  `json:"InlinePolicies,omitempty"`
+	Policies                 []string        `json:"Policies,omitempty"`
 }
 
 func (r Role) ResourceType() string {
@@ -166,8 +113,8 @@ func (r Role) ResourceType() string {
 }
 
 type BucketPolicy struct {
-	BucketName string         `yaml:"-"`
-	Policy     PolicyDocument `yaml:"Policy"`
+	BucketName string          `json:"-"`
+	Policy     *PolicyDocument `json:"Policy"`
 }
 
 func (u BucketPolicy) Service() string {

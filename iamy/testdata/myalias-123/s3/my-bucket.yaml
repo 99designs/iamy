@@ -4,5 +4,15 @@ Policy:
     Effect: Allow
     Principal: '*'
     Resource: arn:aws:s3:::my-bucket/*
-    Sid: AddPerm
+    Sid: AllowGet
+  - Action:
+    - s3:ListBucket
+    - s3:GetBucketLocation
+    Effect: Allow
+    Principal:
+      AWS:
+      - arn:aws:iam::111111111111:root
+      - arn:aws:iam::222222222222:root
+    Resource: arn:aws:s3:::my-bucket-2
+    Sid: AllowList
   Version: 2012-10-17

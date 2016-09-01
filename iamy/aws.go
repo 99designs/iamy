@@ -62,7 +62,7 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	wg.Wait()
 
 	if iamErr != nil {
-		return nil, errors.Wrap(iamErr, "Error fetching IAM error")
+		return nil, errors.Wrap(iamErr, "Error fetching IAM data")
 	}
 	if s3Err != nil {
 		return nil, errors.Wrap(s3Err, "Error fetching S3 data")

@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"text/template"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 const pathTemplateBlob = "{{.Account}}/{{.Resource.Service}}/{{.Resource.ResourceType}}{{.Resource.ResourcePath}}{{.Resource.ResourceName}}.yaml"
