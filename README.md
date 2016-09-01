@@ -11,13 +11,13 @@ This allows you to use a "Infrastructure as Code" model to manage your IAM confi
 $ iamy pull
 
 $ find .
-./myaccount-123456789/user/joe.yml
+./myaccount-123456789/iam/user/joe.yml
 
-$ mkdir -p myaccount-123456789/user/foo
+$ mkdir -p myaccount-123456789/iam/user/foo
 
-$ touch myaccount-123456789/user/foo/bar.baz
+$ touch myaccount-123456789/iam/user/foo/bar.baz
 
-$ cat << EOD > myaccount-123456789/user/billy.blogs
+$ cat << EOD > myaccount-123456789/iam/user/billy.blogs
 Policies:
 - arn:aws:iam::aws:policy/ReadOnly
 EOD
@@ -28,7 +28,7 @@ Commands to push changes to AWS:
         aws iam create-user --user-name billy.blogs
         aws iam attach-user-policy --user-name billy.blogs --policy-arn arn:aws:iam::aws:policy/ReadOnly
 
-Exec all aws commands? (y/N) Y
+Exec all aws commands? (y/N) y
 
 > aws iam create-user --path /foo --user-name bar.baz
 > aws iam create-user --user-name billy.blogs
