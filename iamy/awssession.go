@@ -1,12 +1,24 @@
 package iamy
 
-import "github.com/aws/aws-sdk-go/aws/session"
+import (
+	"log"
+
+	"github.com/aws/aws-sdk-go/aws/session"
+)
 
 var sess *session.Session
 
 func awsSession() *session.Session {
 	if sess == nil {
-		sess = session.New()
+		var err error
+		sess, err = session.NewSessionWithOptions(session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+		})
+
+		if err != nil {
+			log.Fatal("awsSession: couldn't create an AWS session", err)
+		}
 	}
+
 	return sess
 }
