@@ -16,11 +16,10 @@ ARCH := $(shell go env GOHOSTARCH)
 #  - Attach the binaries from ./bin/*
 
 release: bin/iamy-linux-amd64 bin/iamy-$(OS)-$(ARCH)
-	gzip bin/*
 
 bin/iamy-linux-amd64:
 	@mkdir -p bin
-	docker run -it -v $$GOPATH:/go library/golang go build $(GOBUILD_ARGS) -o /go/src/github.com/99designs/iamy/$@ github.com/99designs/iamy
+	docker run -it -v $$GOPATH:/go golang:latest go build $(GOBUILD_ARGS) -o /go/src/github.com/99designs/iamy/$@ github.com/99designs/iamy
 
 bin/iamy-$(OS)-$(ARCH):
 	@mkdir -p bin
