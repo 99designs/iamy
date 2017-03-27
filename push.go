@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/99designs/iamy/iamy"
+	"github.com/fatih/color"
 )
 
 type PushCommandInput struct {
@@ -42,6 +43,16 @@ func PushCommand(ui Ui, input PushCommandInput) {
 	ui.Println("No files found for AWS Account ID " + dataFromAws.Account.Id)
 }
 
+func printCommands(prefix string, awsCmds iamy.CmdList, ui Ui) {
+	for _, cmd := range awsCmds {
+		cmdStr := cmd.String()
+		if cmd.IsDestructive() {
+			cmdStr = color.RedString(cmdStr)
+		}
+		ui.Println(prefix + cmdStr)
+	}
+}
+
 func sync(yamlData iamy.AccountData, awsData *iamy.AccountData, ui Ui) {
 	ui.Debug.Printf("Generating sync commands for %s", awsData.Account.String())
 
@@ -52,8 +63,8 @@ func sync(yamlData iamy.AccountData, awsData *iamy.AccountData, ui Ui) {
 	}
 
 	ui.Println("Commands to push changes to AWS:\n")
-	prefix := "        "
-	ui.Println(prefix + strings.Replace(awsCmds.String(), "\n", "\n"+prefix, -1))
+
+	printCommands("      ", awsCmds, ui)
 
 	r, err := prompt(fmt.Sprintf("\nRun all aws commands? (y/N) "))
 	if err != nil {
