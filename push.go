@@ -66,7 +66,7 @@ func sync(yamlData iamy.AccountData, awsData *iamy.AccountData, ui Ui) {
 
 	printCommands("      ", awsCmds, ui)
 
-	r, err := prompt(fmt.Sprintf("\nRun all aws commands? (y/N) "))
+	r, err := prompt(fmt.Sprintf("\nRun %d aws commands (%d destructive)? (y/N) ", awsCmds.Count(), awsCmds.CountDestructive()))
 	if err != nil {
 		ui.Fatal(err)
 		return

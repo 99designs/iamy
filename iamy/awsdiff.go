@@ -52,6 +52,20 @@ func (cc CmdList) String() string {
 	return strings.Join(parts, "\n")
 }
 
+func (cc CmdList) Count() int {
+	return len(cc)
+}
+
+func (cc CmdList) CountDestructive() int {
+	count := 0
+	for _, c := range cc {
+		if c.IsDestructive() {
+			count++
+		}
+	}
+	return count
+}
+
 func path(v string) string {
 	if v == "" {
 		return "/"
