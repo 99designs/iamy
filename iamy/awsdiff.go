@@ -26,6 +26,17 @@ func (c Cmd) String() string {
 	return strings.Join(parts, " ")
 }
 
+// IsDestructive indicates if the aws command is destructive
+func (c Cmd) IsDestructive() bool {
+	if len(c.Args) >= 2 {
+		a := c.Args[1]
+		if strings.HasPrefix(a, "de") || strings.HasPrefix(a, "remove") {
+			return true
+		}
+	}
+	return false
+}
+
 type CmdList []Cmd
 
 func (cc *CmdList) Add(name string, args ...string) {
@@ -39,6 +50,20 @@ func (cc CmdList) String() string {
 	}
 
 	return strings.Join(parts, "\n")
+}
+
+func (cc CmdList) Count() int {
+	return len(cc)
+}
+
+func (cc CmdList) CountDestructive() int {
+	count := 0
+	for _, c := range cc {
+		if c.IsDestructive() {
+			count++
+		}
+	}
+	return count
 }
 
 func path(v string) string {
