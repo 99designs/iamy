@@ -177,11 +177,19 @@ func (a *awsSyncCmdGenerator) updatePolicies() {
 		if found, fromPolicy := a.from.FindPolicyByName(toPolicy.Name, toPolicy.Path); found {
 			// Update policy
 			if fromPolicy.Policy.JsonString() != toPolicy.Policy.JsonString() {
-				a.cmds.Add("aws", "iam", "create-policy-version", "--policy-arn", Arn(toPolicy, a.to.Account), "--set-as-default", "--policy-document", toPolicy.Policy.JsonString())
+				a.cmds.Add("aws", "iam", "create-policy-version",
+					"--policy-arn", Arn(toPolicy, a.to.Account),
+					"--set-as-default",
+					"--policy-document", toPolicy.Policy.JsonString(),
+				)
 			}
 		} else {
 			// Create policy
-			a.cmds.Add("aws", "iam", "create-policy", "--policy-name", toPolicy.Name, "--path", path(toPolicy.Path), "--policy-document", toPolicy.Policy.JsonString())
+			a.cmds.Add("aws", "iam", "create-policy",
+				"--policy-name", toPolicy.Name,
+				"--path", path(toPolicy.Path),
+				"--policy-document", toPolicy.Policy.JsonString(),
+			)
 		}
 	}
 }
