@@ -214,22 +214,23 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 		}
 
 		for _, version := range policyResp.PolicyVersionList {
-			if *version.IsDefaultVersion {
-				doc, err := NewPolicyDocumentFromEncodedJson(*version.Document)
-				if err != nil {
-					return err
-				}
-
-				p := Policy{
-					iamService: iamService{
-						Name: *policyResp.PolicyName,
-						Path: *policyResp.Path,
-					},
-					Policy: doc,
-				}
-
-				a.data.Policies = append(a.data.Policies, p)
+			if !*version.IsDefaultVersion {
+				continue
 			}
+			doc, err := NewPolicyDocumentFromEncodedJson(*version.Document)
+			if err != nil {
+				return err
+			}
+
+			p := Policy{
+				iamService: iamService{
+					Name: *policyResp.PolicyName,
+					Path: *policyResp.Path,
+				},
+				Policy: doc,
+			}
+
+			a.data.Policies = append(a.data.Policies, p)
 		}
 	}
 
