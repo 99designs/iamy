@@ -19,7 +19,7 @@ func PushCommand(ui Ui, input PushCommandInput) {
 	yaml := iamy.YamlLoadDumper{
 		Dir: input.Dir,
 	}
-	aws := iamy.AwsFetcher{}
+	aws := iamy.AwsFetcher{Mode: iamy.ModePush}
 
 	allDataFromYaml, err := yaml.Load()
 	if err != nil {

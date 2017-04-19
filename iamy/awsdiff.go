@@ -185,11 +185,17 @@ func (a *awsSyncCmdGenerator) updatePolicies() {
 			}
 		} else {
 			// Create policy
-			a.cmds.Add("aws", "iam", "create-policy",
+			args := []string{
+				"iam", "create-policy",
 				"--policy-name", toPolicy.Name,
 				"--path", path(toPolicy.Path),
-				"--policy-document", toPolicy.Policy.JsonString(),
-			)
+			}
+			if toPolicy.Description != "" {
+				args = append(args, "--description", toPolicy.Description)
+			}
+			// document last, for easier reading by end-user
+			args = append(args, "--policy-document", toPolicy.Policy.JsonString())
+			a.cmds.Add("aws", args...)
 		}
 	}
 }

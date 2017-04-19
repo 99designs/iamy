@@ -10,10 +10,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Mode int
+
+const (
+	ModePush Mode = iota
+	ModePull
+)
+
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 
 // An AwsFetcher fetches account data from AWS
 type AwsFetcher struct {
+	Mode Mode
+
 	iam     *iamClient
 	s3      *s3Client
 	account *Account
@@ -217,9 +226,19 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			if !*version.IsDefaultVersion {
 				continue
 			}
+
 			doc, err := NewPolicyDocumentFromEncodedJson(*version.Document)
 			if err != nil {
 				return err
+			}
+
+			description := ""
+			if a.Mode == ModePull {
+				log.Printf("getPolicyDescription(%s)", *policyResp.Arn)
+				description, err = a.iam.getPolicyDescription(*policyResp.Arn)
+				if err != nil {
+					return err
+				}
 			}
 
 			p := Policy{
@@ -227,7 +246,8 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 					Name: *policyResp.PolicyName,
 					Path: *policyResp.Path,
 				},
-				Policy: doc,
+				Description: description,
+				Policy:      doc,
 			}
 
 			a.data.Policies = append(a.data.Policies, p)
