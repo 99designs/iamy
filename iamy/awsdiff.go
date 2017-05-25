@@ -178,7 +178,7 @@ func (a *awsSyncCmdGenerator) updatePolicies() {
 			// Update policy
 			if fromPolicy.Policy.JsonString() != toPolicy.Policy.JsonString() {
                                 if fromPolicy.NumberOfVersions == 5 {
-				    a.cmds.Add("aws", "iam", "delete-policy-version", "--policy-arn", Arn(toPolicy, a.to.Account),  "--policy-version", fromPolicy.OldestVersion)
+					a.cmds.Add("aws", "iam", "delete-policy-version", "--policy-arn", Arn(toPolicy, a.to.Account),  "--policy-version", fromPolicy.OldestVersion)
                                 }
 				a.cmds.Add("aws", "iam", "create-policy-version", "--policy-arn", Arn(toPolicy, a.to.Account), "--set-as-default", "--policy-document", toPolicy.Policy.JsonString())
 			}
