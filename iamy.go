@@ -12,6 +12,7 @@ import (
 var (
 	Version    string = "dev"
 	defaultDir string
+	dryRun *bool
 )
 
 type logWriter struct{ *log.Logger }
@@ -36,6 +37,7 @@ func main() {
 		push      = kingpin.Command("push", "Syncs IAM users, groups and policies from files to the active AWS account")
 		pushDir   = push.Flag("dir", "The directoy to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
 	)
+	dryRun = kingpin.Flag("dry-run", "Show what would happen, but don't prompt to do it").Bool()
 
 	kingpin.Version(Version)
 	kingpin.CommandLine.Help =
