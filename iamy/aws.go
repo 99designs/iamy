@@ -247,7 +247,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			}
 		}
                 defaultPolicy.OldestVersion = oldestVersionId
-	        a.data.Policies = append(a.data.Policies, defaultPolicy)
+		a.data.Policies = append(a.data.Policies, defaultPolicy)
 	}
 
 	return nil
