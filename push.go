@@ -66,6 +66,10 @@ func sync(yamlData iamy.AccountData, awsData *iamy.AccountData, ui Ui) {
 
 	printCommands("      ", awsCmds, ui)
 
+	if *dryRun {
+		ui.Println("Dry-run mode not running aws commands")
+		return
+	}
 	r, err := prompt(fmt.Sprintf("\nRun %d aws commands (%d destructive)? (y/N) ", awsCmds.Count(), awsCmds.CountDestructive()))
 	if err != nil {
 		ui.Fatal(err)
