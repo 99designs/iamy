@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+// MaxAllowedPolicyVersions are the number of Versions of a managed policy that can be stored
+// See http://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-limits.html
+const MaxAllowedPolicyVersions = 5
+
 type Cmd struct {
 	Name string
 	Args []string
@@ -177,6 +181,11 @@ func (a *awsSyncCmdGenerator) updatePolicies() {
 		if found, fromPolicy := a.from.FindPolicyByName(toPolicy.Name, toPolicy.Path); found {
 			// Update policy
 			if fromPolicy.Policy.JsonString() != toPolicy.Policy.JsonString() {
+
+				if fromPolicy.numberOfVersions >= MaxAllowedPolicyVersions {
+					a.cmds.Add("aws", "iam", "delete-policy-version", "--policy-arn", Arn(toPolicy, a.to.Account), "--policy-version", fromPolicy.oldestVersionId)
+				}
+
 				a.cmds.Add("aws", "iam", "create-policy-version",
 					"--policy-arn", Arn(toPolicy, a.to.Account),
 					"--set-as-default",
