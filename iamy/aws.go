@@ -257,10 +257,12 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 				Name: *policyResp.PolicyName,
 				Path: *policyResp.Path,
 			},
-			Description:      *policyResp.Description,
 			oldestVersionId:  findOldestPolicyVersionId(policyResp.PolicyVersionList),
 			numberOfVersions: len(policyResp.PolicyVersionList),
 			Policy:           doc,
+		}
+		if policyResp.Description != nil {
+			p.Description = *policyResp.Description
 		}
 
 		a.data.Policies = append(a.data.Policies, p)
