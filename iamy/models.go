@@ -94,6 +94,8 @@ type InlinePolicy struct {
 
 type Policy struct {
 	iamService `json:"-"`
+	NumberOfVersions int
+	OldestVersion string
 	Policy     *PolicyDocument `json:"Policy"`
 }
 

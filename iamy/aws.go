@@ -4,6 +4,7 @@ import (
 	"log"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/iam"
@@ -208,29 +209,45 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 	}
 
 	for _, policyResp := range resp.Policies {
+                oldestVersionDate := time.Now()
+                oldestVersionId := "v1"
+                var defaultPolicy Policy
+
 		if cfnResourceRegexp.MatchString(*policyResp.PolicyName) {
 			log.Printf("Skipping CloudFormation generated policy %s", *policyResp.PolicyName)
 			continue
 		}
 
 		for _, version := range policyResp.PolicyVersionList {
+                        currentVersionDate := *version.CreateDate
+                        currentVersionId := *version.VersionId
+
 			if *version.IsDefaultVersion {
 				doc, err := NewPolicyDocumentFromEncodedJson(*version.Document)
 				if err != nil {
 					return err
 				}
 
-				p := Policy{
+
+				defaultPolicy = Policy{
 					iamService: iamService{
 						Name: *policyResp.PolicyName,
 						Path: *policyResp.Path,
 					},
+					OldestVersion: "UNKNOWN",
+					NumberOfVersions: len(policyResp.PolicyVersionList),
 					Policy: doc,
 				}
 
-				a.data.Policies = append(a.data.Policies, p)
+			} else {
+				if oldestVersionDate.After(currentVersionDate) {
+					oldestVersionDate = currentVersionDate
+					oldestVersionId = currentVersionId
+				}
 			}
 		}
+		defaultPolicy.OldestVersion = oldestVersionId
+		a.data.Policies = append(a.data.Policies, defaultPolicy)
 	}
 
 	return nil
