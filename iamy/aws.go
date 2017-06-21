@@ -12,8 +12,12 @@ import (
 
 var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 
-// An AwsFetcher fetches account data from AWS
+// AwsFetcher fetches account data from AWS
 type AwsFetcher struct {
+	// As Policy descriptions are immutable, you can skip updating them
+	// when pushing to AWS
+	SkipFetchingPolicyDescriptions bool
+
 	iam     *iamClient
 	s3      *s3Client
 	account *Account
@@ -135,7 +139,36 @@ func (a *AwsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *
 	return nil
 }
 
+func (a *AwsFetcher) fetchPolicyDescriptions(resp *iam.GetAccountAuthorizationDetailsOutput) error {
+	log.Println("Fetching Policy descriptions")
+	var err error
+	var wg sync.WaitGroup
+	for _, policyResp := range resp.Policies {
+		if cfnResourceRegexp.MatchString(*policyResp.PolicyName) {
+			continue
+		}
+
+		wg.Add(1)
+		go func(policy *iam.ManagedPolicyDetail) {
+			defer wg.Done()
+			desc, fetchErr := a.iam.getPolicyDescription(*policy.Arn)
+			policy.SetDescription(desc)
+			if fetchErr != nil {
+				err = fetchErr
+			}
+		}(policyResp)
+
+	}
+	wg.Wait()
+
+	return err
+}
+
 func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
+	if !a.SkipFetchingPolicyDescriptions {
+		a.fetchPolicyDescriptions(resp)
+	}
+
 	for _, userResp := range resp.UserDetailList {
 		if cfnResourceRegexp.MatchString(*userResp.UserName) {
 			log.Printf("Skipping CloudFormation generated user %s", *userResp.UserName)
@@ -213,27 +246,34 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			continue
 		}
 
-		for _, version := range policyResp.PolicyVersionList {
-			if *version.IsDefaultVersion {
-				doc, err := NewPolicyDocumentFromEncodedJson(*version.Document)
-				if err != nil {
-					return err
-				}
-
-				p := Policy{
-					iamService: iamService{
-						Name: *policyResp.PolicyName,
-						Path: *policyResp.Path,
-					},
-					Policy: doc,
-				}
-
-				a.data.Policies = append(a.data.Policies, p)
-			}
+		defaultPolicyVersion := findDefaultPolicyVersion(policyResp.PolicyVersionList)
+		doc, err := NewPolicyDocumentFromEncodedJson(*defaultPolicyVersion.Document)
+		if err != nil {
+			return err
 		}
+
+		p := Policy{
+			iamService: iamService{
+				Name: *policyResp.PolicyName,
+				Path: *policyResp.Path,
+			},
+			Description: *policyResp.Description,
+			Policy:      doc,
+		}
+
+		a.data.Policies = append(a.data.Policies, p)
 	}
 
 	return nil
+}
+
+func findDefaultPolicyVersion(versions []*iam.PolicyVersion) *iam.PolicyVersion {
+	for _, version := range versions {
+		if *version.IsDefaultVersion {
+			return version
+		}
+	}
+	panic("Expected a default policy version")
 }
 
 func (a *AwsFetcher) getAccount() (*Account, error) {

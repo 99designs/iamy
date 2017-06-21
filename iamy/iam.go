@@ -43,6 +43,14 @@ func (c *iamClient) getAccountAuthorizationDetailsResponses(input *iam.GetAccoun
 	return responses, nil
 }
 
+func (c *iamClient) getPolicyDescription(arn string) (string, error) {
+	resp, err := c.GetPolicy(&iam.GetPolicyInput{PolicyArn: &arn})
+	if err == nil && resp.Policy.Description != nil {
+		return *resp.Policy.Description, nil
+	}
+	return "", err
+}
+
 func (c *iamClient) MustGetNonDefaultPolicyVersions(policyArn string) []string {
 	listPolicyVersions, err := c.ListPolicyVersions(&iam.ListPolicyVersionsInput{
 		PolicyArn: aws.String(policyArn),
