@@ -45,10 +45,10 @@ func (c *iamClient) getAccountAuthorizationDetailsResponses(input *iam.GetAccoun
 
 func (c *iamClient) getPolicyDescription(arn string) (string, error) {
 	resp, err := c.GetPolicy(&iam.GetPolicyInput{PolicyArn: &arn})
-	if err != nil {
-		return "", err
+	if err == nil && resp.Policy.Description != nil {
+		return *resp.Policy.Description, nil
 	}
-	return *resp.Policy.Description, nil
+	return "", err
 }
 
 func (c *iamClient) MustGetNonDefaultPolicyVersions(policyArn string) []string {

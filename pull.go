@@ -12,7 +12,7 @@ type PullCommandInput struct {
 }
 
 func PullCommand(ui Ui, input PullCommandInput) {
-	aws := iamy.AwsFetcher{Mode: iamy.ModePull}
+	aws := iamy.AwsFetcher{}
 	data, err := aws.Fetch()
 	if err != nil {
 		ui.Error.Fatal(fmt.Printf("%s", err))
