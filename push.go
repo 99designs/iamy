@@ -33,6 +33,7 @@ func PushCommand(ui Ui, input PushCommandInput) {
 		return
 	}
 
+	// find the yaml account data that matches the aws account
 	for _, dataFromYaml := range allDataFromYaml {
 		if dataFromYaml.Account.Id == dataFromAws.Account.Id {
 			sync(dataFromYaml, dataFromAws, ui)
