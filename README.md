@@ -20,10 +20,10 @@ For the `push` command, IAMy will output an execution plan as a series of [`aws`
 
 Because IAMy uses the [aws cli tool](https://aws.amazon.com/cli/), you'll want to install it first.
 
-For configuration, IAMy uses the same [AWS environment variables](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-environment) as the aws cli. You might find [aws-vault](https://github.com/99designs/aws-vault) an excellent complementary tool for managing AWS credentials.
+For configuration, IAMy uses the same [AWS environment variables](http://docs.aws.amazon.com/cli/latest/userguide/cli-environment.html) as the aws cli. You might find [aws-vault](https://github.com/99designs/aws-vault) an excellent complementary tool for managing AWS credentials.
 
 
-## Usage
+## Example Usage
 
 ```bash
 $ iamy pull
