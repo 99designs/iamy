@@ -257,9 +257,10 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 				Name: *policyResp.PolicyName,
 				Path: *policyResp.Path,
 			},
-			oldestVersionId:  findOldestPolicyVersionId(policyResp.PolicyVersionList),
-			numberOfVersions: len(policyResp.PolicyVersionList),
-			Policy:           doc,
+			oldestVersionId:      findOldestPolicyVersionId(policyResp.PolicyVersionList),
+			numberOfVersions:     len(policyResp.PolicyVersionList),
+			nondefaultVersionIds: findNonDefaultPolicyVersionIds(policyResp.PolicyVersionList),
+			Policy:               doc,
 		}
 		if policyResp.Description != nil {
 			p.Description = *policyResp.Description
@@ -278,6 +279,16 @@ func findDefaultPolicyVersion(versions []*iam.PolicyVersion) *iam.PolicyVersion 
 		}
 	}
 	panic("Expected a default policy version")
+}
+
+func findNonDefaultPolicyVersionIds(versions []*iam.PolicyVersion) []string {
+	ss := []string{}
+	for _, version := range versions {
+		if !*version.IsDefaultVersion {
+			ss = append(ss, *version.VersionId)
+		}
+	}
+	return ss
 }
 
 func findOldestPolicyVersionId(versions []*iam.PolicyVersion) string {

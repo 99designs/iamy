@@ -51,24 +51,6 @@ func (c *iamClient) getPolicyDescription(arn string) (string, error) {
 	return "", err
 }
 
-func (c *iamClient) MustGetNonDefaultPolicyVersions(policyArn string) []string {
-	listPolicyVersions, err := c.ListPolicyVersions(&iam.ListPolicyVersionsInput{
-		PolicyArn: aws.String(policyArn),
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	versions := []string{}
-	for _, v := range listPolicyVersions.Versions {
-		if !*v.IsDefaultVersion {
-			versions = append(versions, *v.VersionId)
-		}
-	}
-
-	return versions
-}
-
 func (c *iamClient) MustGetSecurityCredsForUser(username string) (accessKeyIds, mfaIds []string, hasLoginProfile bool) {
 	// access keys
 	listUsersResp, err := c.ListAccessKeys(&iam.ListAccessKeysInput{

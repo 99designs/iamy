@@ -93,11 +93,12 @@ type InlinePolicy struct {
 }
 
 type Policy struct {
-	iamService       `json:"-"`
-	numberOfVersions int
-	oldestVersionId  string
-	Description      string          `json:"Description,omitempty"`
-	Policy           *PolicyDocument `json:"Policy"`
+	iamService           `json:"-"`
+	numberOfVersions     int
+	oldestVersionId      string
+	nondefaultVersionIds []string
+	Description          string          `json:"Description,omitempty"`
+	Policy               *PolicyDocument `json:"Policy"`
 }
 
 func (p Policy) ResourceType() string {

@@ -132,7 +132,7 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 	// delete old entities
 	for _, fromPolicy := range a.from.Policies {
 		if found, _ := a.to.FindPolicyByName(fromPolicy.Name, fromPolicy.Path); !found {
-			for _, v := range iam.MustGetNonDefaultPolicyVersions(Arn(fromPolicy, a.to.Account)) {
+			for _, v := range fromPolicy.nondefaultVersionIds {
 				a.cmds.Add("aws", "iam", "delete-policy-version", "--version-id", v, "--policy-arn", Arn(fromPolicy, a.to.Account))
 			}
 			a.cmds.Add("aws", "iam", "delete-policy", "--policy-arn", Arn(fromPolicy, a.to.Account))
