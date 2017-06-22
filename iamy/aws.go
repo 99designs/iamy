@@ -100,25 +100,31 @@ func (a *AwsFetcher) fetchS3Data() error {
 
 	return nil
 }
-
 func (a *AwsFetcher) fetchIamData() error {
-	responses, err := a.iam.getAccountAuthorizationDetailsResponses(&iam.GetAccountAuthorizationDetailsInput{
-		Filter: aws.StringSlice([]string{
-			iam.EntityTypeUser,
-			iam.EntityTypeGroup,
-			iam.EntityTypeRole,
-			iam.EntityTypeLocalManagedPolicy,
-		}),
-	})
-	if err != nil {
+	var populateIamDataErr error
+	err := a.iam.GetAccountAuthorizationDetailsPages(
+		&iam.GetAccountAuthorizationDetailsInput{
+			Filter: aws.StringSlice([]string{
+				iam.EntityTypeUser,
+				iam.EntityTypeGroup,
+				iam.EntityTypeRole,
+				iam.EntityTypeLocalManagedPolicy,
+			}),
+		},
+		func(resp *iam.GetAccountAuthorizationDetailsOutput, lastPage bool) bool {
+			populateIamDataErr = a.populateIamData(resp)
+			if populateIamDataErr != nil {
+				return false
+			}
+
+			return true
+		},
+	)
+	if populateIamDataErr != nil {
 		return err
 	}
-
-	for _, resp := range responses {
-		err = a.populateIamData(resp)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
 
 	return nil

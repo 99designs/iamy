@@ -17,32 +17,6 @@ func newIamClient(sess *session.Session) *iamClient {
 	}
 }
 
-// getAccountAuthorizationDetailsResponses pages through results from
-// GetAccountAuthorizationDetails and returns the results as an array
-func (c *iamClient) getAccountAuthorizationDetailsResponses(input *iam.GetAccountAuthorizationDetailsInput) ([]*iam.GetAccountAuthorizationDetailsOutput, error) {
-	responses := []*iam.GetAccountAuthorizationDetailsOutput{}
-	complete := false
-	var marker *string
-	for !complete {
-		input.MaxItems = aws.Int64(1000)
-		input.Marker = marker
-		resp, err := c.GetAccountAuthorizationDetails(input)
-		if err != nil {
-			return []*iam.GetAccountAuthorizationDetailsOutput{}, err
-		}
-
-		responses = append(responses, resp)
-
-		if *resp.IsTruncated {
-			marker = resp.Marker
-		} else {
-			complete = true
-		}
-	}
-
-	return responses, nil
-}
-
 func (c *iamClient) getPolicyDescription(arn string) (string, error) {
 	resp, err := c.GetPolicy(&iam.GetPolicyInput{PolicyArn: &arn})
 	if err == nil && resp.Policy.Description != nil {
