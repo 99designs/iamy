@@ -1,0 +1,8 @@
+AssumeRolePolicyDocument:
+  Statement:
+  - Action: sts:AssumeRole
+    Effect: Allow
+    Principal:
+      AWS: arn:aws:iam::123:root
+    Sid: ""
+  Version: 2012-10-17
