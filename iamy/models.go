@@ -121,7 +121,7 @@ type BucketPolicy struct {
 	Policy     *PolicyDocument `json:"Policy"`
 }
 
-func (u BucketPolicy) Service() string {
+func (bp BucketPolicy) Service() string {
 	return "s3"
 }
 
@@ -129,11 +129,11 @@ func (bp BucketPolicy) ResourceType() string {
 	return ""
 }
 
-func (p BucketPolicy) ResourceName() string {
-	return p.BucketName
+func (bp BucketPolicy) ResourceName() string {
+	return bp.BucketName
 }
 
-func (p BucketPolicy) ResourcePath() string {
+func (bp BucketPolicy) ResourcePath() string {
 	return "/"
 }
 
@@ -176,8 +176,8 @@ func (a *AccountData) addBucketPolicy(bp BucketPolicy) {
 	a.BucketPolicies = append(a.BucketPolicies, bp)
 }
 
-func (ad *AccountData) FindUserByName(name, path string) (bool, *User) {
-	for _, u := range ad.Users {
+func (a *AccountData) FindUserByName(name, path string) (bool, *User) {
+	for _, u := range a.Users {
 		if u.Name == name && u.Path == path {
 			return true, &u
 		}
@@ -186,8 +186,8 @@ func (ad *AccountData) FindUserByName(name, path string) (bool, *User) {
 	return false, nil
 }
 
-func (ad *AccountData) FindGroupByName(name, path string) (bool, *Group) {
-	for _, g := range ad.Groups {
+func (a *AccountData) FindGroupByName(name, path string) (bool, *Group) {
+	for _, g := range a.Groups {
 		if g.Name == name && g.Path == path {
 			return true, &g
 		}
@@ -196,8 +196,8 @@ func (ad *AccountData) FindGroupByName(name, path string) (bool, *Group) {
 	return false, nil
 }
 
-func (ad *AccountData) FindRoleByName(name, path string) (bool, *Role) {
-	for _, r := range ad.Roles {
+func (a *AccountData) FindRoleByName(name, path string) (bool, *Role) {
+	for _, r := range a.Roles {
 		if r.Name == name && r.Path == path {
 			return true, &r
 		}
@@ -206,8 +206,8 @@ func (ad *AccountData) FindRoleByName(name, path string) (bool, *Role) {
 	return false, nil
 }
 
-func (ad *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
-	for _, p := range ad.Policies {
+func (a *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
+	for _, p := range a.Policies {
 		if p.Name == name && p.Path == path {
 			return true, &p
 		}
@@ -216,8 +216,8 @@ func (ad *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
 	return false, nil
 }
 
-func (ad *AccountData) FindBucketPolicyByBucketName(name string) (bool, *BucketPolicy) {
-	for _, p := range ad.BucketPolicies {
+func (a *AccountData) FindBucketPolicyByBucketName(name string) (bool, *BucketPolicy) {
+	for _, p := range a.BucketPolicies {
 		if p.BucketName == name {
 			return true, &p
 		}
