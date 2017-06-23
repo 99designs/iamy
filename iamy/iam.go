@@ -25,6 +25,14 @@ func (c *iamClient) getPolicyDescription(arn string) (string, error) {
 	return "", err
 }
 
+func (c *iamClient) getRoleDescription(name string) (string, error) {
+	resp, err := c.GetRole(&iam.GetRoleInput{RoleName: &name})
+	if err == nil && resp.Role.Description != nil {
+		return *resp.Role.Description, nil
+	}
+	return "", err
+}
+
 func (c *iamClient) MustGetSecurityCredsForUser(username string) (accessKeyIds, mfaIds []string, hasLoginProfile bool) {
 	// access keys
 	listUsersResp, err := c.ListAccessKeys(&iam.ListAccessKeysInput{

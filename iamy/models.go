@@ -107,6 +107,7 @@ func (p Policy) ResourceType() string {
 
 type Role struct {
 	iamService               `json:"-"`
+	Description              string          `json:"Description,omitempty"`
 	AssumeRolePolicyDocument *PolicyDocument `json:"AssumeRolePolicyDocument"`
 	InlinePolicies           []InlinePolicy  `json:"InlinePolicies,omitempty"`
 	Policies                 []string        `json:"Policies,omitempty"`
