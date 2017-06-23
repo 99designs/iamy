@@ -228,7 +228,16 @@ func (a *awsSyncCmdGenerator) updateRoles() {
 
 		} else {
 			// Create role
-			a.cmds.Add("aws", "iam", "create-role", "--role-name", toRole.Name, "--path", path(toRole.Path), "--assume-role-policy-document", toRole.AssumeRolePolicyDocument.JsonString())
+			args := []string{
+				"iam", "create-role",
+				"--role-name", toRole.Name,
+				"--path", path(toRole.Path),
+			}
+			if toRole.Description != "" {
+				args = append(args, "--description", toRole.Description)
+			}
+			args = append(args, "--assume-role-policy-document", toRole.AssumeRolePolicyDocument.JsonString())
+			a.cmds.Add("aws", args...)
 
 			// add new inline policies
 			for _, ip := range toRole.InlinePolicies {

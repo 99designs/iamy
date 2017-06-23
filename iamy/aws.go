@@ -14,14 +14,17 @@ var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
 
 // AwsFetcher fetches account data from AWS
 type AwsFetcher struct {
-	// As Policy descriptions are immutable, you can skip updating them
+	// As Policy and Role descriptions are immutable, we can skip fetching them
 	// when pushing to AWS
-	SkipFetchingPolicyDescriptions bool
+	SkipFetchingPolicyAndRoleDescriptions bool
 
 	iam     *iamClient
 	s3      *s3Client
 	account *Account
 	data    AccountData
+
+	descriptionFetchWaitGroup sync.WaitGroup
+	descriptionFetchError     error
 }
 
 func (a *AwsFetcher) init() error {
@@ -145,36 +148,35 @@ func (a *AwsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *
 	return nil
 }
 
-func (a *AwsFetcher) fetchPolicyDescriptions(resp *iam.GetAccountAuthorizationDetailsOutput) error {
-	log.Println("Fetching Policy descriptions")
-	var err error
-	var wg sync.WaitGroup
-	for _, policyResp := range resp.Policies {
-		if cfnResourceRegexp.MatchString(*policyResp.PolicyName) {
-			continue
+func (a *AwsFetcher) asyncMarshalPolicyDescriptionIntoStruct(policyArn string, target *string) {
+	a.descriptionFetchWaitGroup.Add(1)
+	go func() {
+		defer a.descriptionFetchWaitGroup.Done()
+		log.Println("Fetching policy description for", policyArn)
+
+		var err error
+		*target, err = a.iam.getPolicyDescription(policyArn)
+		if err != nil {
+			a.descriptionFetchError = err
 		}
+	}()
+}
 
-		wg.Add(1)
-		go func(policy *iam.ManagedPolicyDetail) {
-			defer wg.Done()
-			desc, fetchErr := a.iam.getPolicyDescription(*policy.Arn)
-			policy.SetDescription(desc)
-			if fetchErr != nil {
-				err = fetchErr
-			}
-		}(policyResp)
+func (a *AwsFetcher) asyncMarshalRoleDescriptionIntoStruct(roleName string, target *string) {
+	a.descriptionFetchWaitGroup.Add(1)
+	go func() {
+		defer a.descriptionFetchWaitGroup.Done()
+		log.Println("Fetching role description for", roleName)
 
-	}
-	wg.Wait()
-
-	return err
+		var err error
+		*target, err = a.iam.getRoleDescription(roleName)
+		if err != nil {
+			a.descriptionFetchError = err
+		}
+	}()
 }
 
 func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
-	if !a.SkipFetchingPolicyDescriptions {
-		a.fetchPolicyDescriptions(resp)
-	}
-
 	for _, userResp := range resp.UserDetailList {
 		if cfnResourceRegexp.MatchString(*userResp.UserName) {
 			log.Printf("Skipping CloudFormation generated user %s", *userResp.UserName)
@@ -231,6 +233,10 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			Path: *roleResp.Path,
 		}}
 
+		if !a.SkipFetchingPolicyAndRoleDescriptions {
+			a.asyncMarshalRoleDescriptionIntoStruct(*roleResp.RoleName, &role.Description)
+		}
+
 		var err error
 		role.AssumeRolePolicyDocument, err = NewPolicyDocumentFromEncodedJson(*roleResp.AssumeRolePolicyDocument)
 		if err != nil {
@@ -243,7 +249,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			return err
 		}
 
-		a.data.Roles = append(a.data.Roles, role)
+		a.data.addRole(&role)
 	}
 
 	for _, policyResp := range resp.Policies {
@@ -268,14 +274,17 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			nondefaultVersionIds: findNonDefaultPolicyVersionIds(policyResp.PolicyVersionList),
 			Policy:               doc,
 		}
-		if policyResp.Description != nil {
-			p.Description = *policyResp.Description
+
+		if !a.SkipFetchingPolicyAndRoleDescriptions {
+			a.asyncMarshalPolicyDescriptionIntoStruct(*policyResp.Arn, &p.Description)
 		}
 
-		a.data.Policies = append(a.data.Policies, p)
+		a.data.addPolicy(&p)
 	}
 
-	return nil
+	a.descriptionFetchWaitGroup.Wait()
+
+	return a.descriptionFetchError
 }
 
 func findDefaultPolicyVersion(versions []*iam.PolicyVersion) *iam.PolicyVersion {

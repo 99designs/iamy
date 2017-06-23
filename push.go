@@ -20,7 +20,7 @@ func PushCommand(ui Ui, input PushCommandInput) {
 		Dir: input.Dir,
 	}
 	aws := iamy.AwsFetcher{
-		SkipFetchingPolicyDescriptions: true,
+		SkipFetchingPolicyAndRoleDescriptions: true,
 	}
 
 	allDataFromYaml, err := yaml.Load()

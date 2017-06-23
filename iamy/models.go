@@ -107,6 +107,7 @@ func (p Policy) ResourceType() string {
 
 type Role struct {
 	iamService               `json:"-"`
+	Description              string          `json:"Description,omitempty"`
 	AssumeRolePolicyDocument *PolicyDocument `json:"AssumeRolePolicyDocument"`
 	InlinePolicies           []InlinePolicy  `json:"InlinePolicies,omitempty"`
 	Policies                 []string        `json:"Policies,omitempty"`
@@ -141,8 +142,8 @@ type AccountData struct {
 	Account        *Account
 	Users          []User
 	Groups         []Group
-	Roles          []Role
-	Policies       []Policy
+	Roles          []*Role
+	Policies       []*Policy
 	BucketPolicies []BucketPolicy
 }
 
@@ -151,8 +152,8 @@ func NewAccountData(account string) *AccountData {
 		Account:  NewAccountFromString(account),
 		Users:    []User{},
 		Groups:   []Group{},
-		Roles:    []Role{},
-		Policies: []Policy{},
+		Roles:    []*Role{},
+		Policies: []*Policy{},
 	}
 }
 
@@ -164,11 +165,11 @@ func (a *AccountData) addGroup(g Group) {
 	a.Groups = append(a.Groups, g)
 }
 
-func (a *AccountData) addRole(r Role) {
+func (a *AccountData) addRole(r *Role) {
 	a.Roles = append(a.Roles, r)
 }
 
-func (a *AccountData) addPolicy(p Policy) {
+func (a *AccountData) addPolicy(p *Policy) {
 	a.Policies = append(a.Policies, p)
 }
 
@@ -199,7 +200,7 @@ func (a *AccountData) FindGroupByName(name, path string) (bool, *Group) {
 func (a *AccountData) FindRoleByName(name, path string) (bool, *Role) {
 	for _, r := range a.Roles {
 		if r.Name == name && r.Path == path {
-			return true, &r
+			return true, r
 		}
 	}
 
@@ -209,7 +210,7 @@ func (a *AccountData) FindRoleByName(name, path string) (bool, *Role) {
 func (a *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
 	for _, p := range a.Policies {
 		if p.Name == name && p.Path == path {
-			return true, &p
+			return true, p
 		}
 	}
 
