@@ -84,7 +84,7 @@ func (c *s3Client) populateBucket(b *bucket) error {
 		return err
 	}
 
-	region := normaliseString(r.LocationConstraint)
+	region := s3.NormalizeBucketLocation(normaliseString(r.LocationConstraint))
 	b.policyJson, err = c.GetBucketPolicyDoc(b.name, region)
 
 	return err
