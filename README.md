@@ -16,7 +16,9 @@ IAMy has two subcommands.
 For the `push` command, IAMy will output an execution plan as a series of [`aws` cli](https://aws.amazon.com/cli/) commands which can be optionally executed. This turns out to be a very direct and understandable way to display the changes to be made, and means you can pick and choose exactly what commands get actioned.
 
 
-## Getting set up
+## Getting started
+
+You can install IAMy on macOS with `brew install iamy`, or with the go toolchain `go get -u github.com/99designs/iamy`.
 
 Because IAMy uses the [aws cli tool](https://aws.amazon.com/cli/), you'll want to install it first.
 
