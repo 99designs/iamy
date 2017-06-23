@@ -152,6 +152,8 @@ func (a *AwsFetcher) asyncMarshallPolicyDescriptionIntoStruct(policyArn string, 
 	a.descriptionFetchWaitGroup.Add(1)
 	go func() {
 		defer a.descriptionFetchWaitGroup.Done()
+		log.Println("Fetching policy description for", policyArn)
+
 		var err error
 		*target, err = a.iam.getPolicyDescription(policyArn)
 		if err != nil {
@@ -164,6 +166,8 @@ func (a *AwsFetcher) asyncMarshallRoleDescriptionIntoStruct(roleName string, tar
 	a.descriptionFetchWaitGroup.Add(1)
 	go func() {
 		defer a.descriptionFetchWaitGroup.Done()
+		log.Println("Fetching role description for", roleName)
+
 		var err error
 		*target, err = a.iam.getRoleDescription(roleName)
 		if err != nil {
@@ -245,7 +249,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			return err
 		}
 
-		a.data.Roles = append(a.data.Roles, role)
+		a.data.addRole(&role)
 	}
 
 	for _, policyResp := range resp.Policies {
@@ -275,7 +279,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			a.asyncMarshallPolicyDescriptionIntoStruct(*policyResp.Arn, &p.Description)
 		}
 
-		a.data.Policies = append(a.data.Policies, p)
+		a.data.addPolicy(&p)
 	}
 
 	a.descriptionFetchWaitGroup.Wait()

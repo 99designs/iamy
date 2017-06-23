@@ -101,11 +101,11 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 			case "iam/role":
 				r := Role{iamService: nameAndPath}
 				err = a.unmarshalYamlFile(fp, &r)
-				accounts[accountid].addRole(r)
+				accounts[accountid].addRole(&r)
 			case "iam/policy":
 				p := Policy{iamService: nameAndPath}
 				err = a.unmarshalYamlFile(fp, &p)
-				accounts[accountid].addPolicy(p)
+				accounts[accountid].addPolicy(&p)
 			case "s3":
 				bp := BucketPolicy{BucketName: name}
 				err = a.unmarshalYamlFile(fp, &bp)
