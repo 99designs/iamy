@@ -148,7 +148,7 @@ func (a *AwsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *
 	return nil
 }
 
-func (a *AwsFetcher) asyncMarshallPolicyDescriptionIntoStruct(policyArn string, target *string) {
+func (a *AwsFetcher) asyncMarshalPolicyDescriptionIntoStruct(policyArn string, target *string) {
 	a.descriptionFetchWaitGroup.Add(1)
 	go func() {
 		defer a.descriptionFetchWaitGroup.Done()
@@ -162,7 +162,7 @@ func (a *AwsFetcher) asyncMarshallPolicyDescriptionIntoStruct(policyArn string, 
 	}()
 }
 
-func (a *AwsFetcher) asyncMarshallRoleDescriptionIntoStruct(roleName string, target *string) {
+func (a *AwsFetcher) asyncMarshalRoleDescriptionIntoStruct(roleName string, target *string) {
 	a.descriptionFetchWaitGroup.Add(1)
 	go func() {
 		defer a.descriptionFetchWaitGroup.Done()
@@ -234,7 +234,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 		}}
 
 		if !a.SkipFetchingPolicyAndRoleDescriptions {
-			a.asyncMarshallRoleDescriptionIntoStruct(*roleResp.RoleName, &role.Description)
+			a.asyncMarshalRoleDescriptionIntoStruct(*roleResp.RoleName, &role.Description)
 		}
 
 		var err error
@@ -276,7 +276,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 		}
 
 		if !a.SkipFetchingPolicyAndRoleDescriptions {
-			a.asyncMarshallPolicyDescriptionIntoStruct(*policyResp.Arn, &p.Description)
+			a.asyncMarshalPolicyDescriptionIntoStruct(*policyResp.Arn, &p.Description)
 		}
 
 		a.data.addPolicy(&p)
