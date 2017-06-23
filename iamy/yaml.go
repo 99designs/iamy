@@ -93,11 +93,11 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 			case "iam/user":
 				u := User{iamService: nameAndPath}
 				err = a.unmarshalYamlFile(fp, &u)
-				accounts[accountid].addUser(u)
+				accounts[accountid].addUser(&u)
 			case "iam/group":
 				g := Group{iamService: nameAndPath}
 				err = a.unmarshalYamlFile(fp, &g)
-				accounts[accountid].addGroup(g)
+				accounts[accountid].addGroup(&g)
 			case "iam/role":
 				r := Role{iamService: nameAndPath}
 				err = a.unmarshalYamlFile(fp, &r)
@@ -109,7 +109,7 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 			case "s3":
 				bp := BucketPolicy{BucketName: name}
 				err = a.unmarshalYamlFile(fp, &bp)
-				accounts[accountid].addBucketPolicy(bp)
+				accounts[accountid].addBucketPolicy(&bp)
 			default:
 				panic("Unexpected entity")
 			}

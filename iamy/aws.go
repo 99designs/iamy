@@ -98,7 +98,7 @@ func (a *AwsFetcher) fetchS3Data() error {
 			Policy:     policyDoc,
 		}
 
-		a.data.BucketPolicies = append(a.data.BucketPolicies, bp)
+		a.data.BucketPolicies = append(a.data.BucketPolicies, &bp)
 	}
 
 	return nil
@@ -198,7 +198,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			return err
 		}
 
-		a.data.Users = append(a.data.Users, user)
+		a.data.Users = append(a.data.Users, &user)
 	}
 
 	for _, groupResp := range resp.GroupDetailList {
@@ -219,7 +219,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			return err
 		}
 
-		a.data.Groups = append(a.data.Groups, group)
+		a.data.Groups = append(a.data.Groups, &group)
 	}
 
 	for _, roleResp := range resp.RoleDetailList {

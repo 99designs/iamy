@@ -140,28 +140,28 @@ func (bp BucketPolicy) ResourcePath() string {
 
 type AccountData struct {
 	Account        *Account
-	Users          []User
-	Groups         []Group
+	Users          []*User
+	Groups         []*Group
 	Roles          []*Role
 	Policies       []*Policy
-	BucketPolicies []BucketPolicy
+	BucketPolicies []*BucketPolicy
 }
 
 func NewAccountData(account string) *AccountData {
 	return &AccountData{
 		Account:  NewAccountFromString(account),
-		Users:    []User{},
-		Groups:   []Group{},
+		Users:    []*User{},
+		Groups:   []*Group{},
 		Roles:    []*Role{},
 		Policies: []*Policy{},
 	}
 }
 
-func (a *AccountData) addUser(u User) {
+func (a *AccountData) addUser(u *User) {
 	a.Users = append(a.Users, u)
 }
 
-func (a *AccountData) addGroup(g Group) {
+func (a *AccountData) addGroup(g *Group) {
 	a.Groups = append(a.Groups, g)
 }
 
@@ -173,14 +173,14 @@ func (a *AccountData) addPolicy(p *Policy) {
 	a.Policies = append(a.Policies, p)
 }
 
-func (a *AccountData) addBucketPolicy(bp BucketPolicy) {
+func (a *AccountData) addBucketPolicy(bp *BucketPolicy) {
 	a.BucketPolicies = append(a.BucketPolicies, bp)
 }
 
 func (a *AccountData) FindUserByName(name, path string) (bool, *User) {
 	for _, u := range a.Users {
 		if u.Name == name && u.Path == path {
-			return true, &u
+			return true, u
 		}
 	}
 
@@ -190,7 +190,7 @@ func (a *AccountData) FindUserByName(name, path string) (bool, *User) {
 func (a *AccountData) FindGroupByName(name, path string) (bool, *Group) {
 	for _, g := range a.Groups {
 		if g.Name == name && g.Path == path {
-			return true, &g
+			return true, g
 		}
 	}
 
@@ -220,7 +220,7 @@ func (a *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
 func (a *AccountData) FindBucketPolicyByBucketName(name string) (bool, *BucketPolicy) {
 	for _, p := range a.BucketPolicies {
 		if p.BucketName == name {
-			return true, &p
+			return true, p
 		}
 	}
 
