@@ -198,7 +198,7 @@ func (a *awsSyncCmdGenerator) updatePolicies() {
 				if fromPolicy.numberOfVersions >= MaxAllowedPolicyVersions {
 					a.cmds.Add("aws", "iam", "delete-policy-version",
 						"--policy-arn", Arn(toPolicy, a.to.Account),
-						"--policy-version", fromPolicy.oldestVersionId)
+						"--version-id", fromPolicy.oldestVersionId)
 				}
 
 				a.cmds.Add("aws", "iam", "create-policy-version",
