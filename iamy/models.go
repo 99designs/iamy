@@ -119,7 +119,7 @@ type InstanceProfile struct {
 }
 
 func (ip InstanceProfile) ResourceType() string {
-	return "instance_profile"
+	return "instance-profile"
 }
 
 func (r Role) ResourceType() string {
