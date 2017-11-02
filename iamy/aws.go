@@ -201,9 +201,9 @@ func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesO
 			Path: *profileResp.Path,
 		}}
 		if len(profileResp.Roles) > 0 {
-			for _, roleResp := range  profileResp.Roles {
+			for _, roleResp := range profileResp.Roles {
 				role := *(roleResp.RoleName)
-				profile.Roles = append (profile.Roles, role)
+				profile.Roles = append(profile.Roles, role)
 			}
 		}
 		a.data.InstanceProfiles = append(a.data.InstanceProfiles, &profile)

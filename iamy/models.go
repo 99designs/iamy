@@ -148,22 +148,22 @@ func (bp BucketPolicy) ResourcePath() string {
 }
 
 type AccountData struct {
-	Account        *Account
-	Users          []*User
-	Groups         []*Group
-	Roles          []*Role
-	Policies       []*Policy
-	BucketPolicies []*BucketPolicy
+	Account          *Account
+	Users            []*User
+	Groups           []*Group
+	Roles            []*Role
+	Policies         []*Policy
+	BucketPolicies   []*BucketPolicy
 	InstanceProfiles []*InstanceProfile
 }
 
 func NewAccountData(account string) *AccountData {
 	return &AccountData{
-		Account:  NewAccountFromString(account),
-		Users:    []*User{},
-		Groups:   []*Group{},
-		Roles:    []*Role{},
-		Policies: []*Policy{},
+		Account:          NewAccountFromString(account),
+		Users:            []*User{},
+		Groups:           []*Group{},
+		Roles:            []*Role{},
+		Policies:         []*Policy{},
 		InstanceProfiles: []*InstanceProfile{},
 	}
 }
