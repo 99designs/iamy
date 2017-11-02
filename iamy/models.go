@@ -113,6 +113,15 @@ type Role struct {
 	Policies                 []string        `json:"Policies,omitempty"`
 }
 
+type InstanceProfile struct {
+	iamService		`json:"-"`
+	Roles			[]string	`json:"Roles,omitempty"`
+}
+
+func (ip InstanceProfile) ResourceType() string {
+	return "instance_profile"
+}
+
 func (r Role) ResourceType() string {
 	return "role"
 }
@@ -145,6 +154,7 @@ type AccountData struct {
 	Roles          []*Role
 	Policies       []*Policy
 	BucketPolicies []*BucketPolicy
+	InstanceProfiles []*InstanceProfile
 }
 
 func NewAccountData(account string) *AccountData {
@@ -154,6 +164,7 @@ func NewAccountData(account string) *AccountData {
 		Groups:   []*Group{},
 		Roles:    []*Role{},
 		Policies: []*Policy{},
+		InstanceProfiles: []*InstanceProfile{},
 	}
 }
 
@@ -171,6 +182,10 @@ func (a *AccountData) addRole(r *Role) {
 
 func (a *AccountData) addPolicy(p *Policy) {
 	a.Policies = append(a.Policies, p)
+}
+
+func (a *AccountData) addInstanceProfile(p *InstanceProfile) {
+	a.InstanceProfiles = append(a.InstanceProfiles, p)
 }
 
 func (a *AccountData) addBucketPolicy(bp *BucketPolicy) {
@@ -209,6 +224,16 @@ func (a *AccountData) FindRoleByName(name, path string) (bool, *Role) {
 
 func (a *AccountData) FindPolicyByName(name, path string) (bool, *Policy) {
 	for _, p := range a.Policies {
+		if p.Name == name && p.Path == path {
+			return true, p
+		}
+	}
+
+	return false, nil
+}
+
+func (a *AccountData) FindInstanceProfileByName(name, path string) (bool, *InstanceProfile) {
+	for _, p := range a.InstanceProfiles {
 		if p.Name == name && p.Path == path {
 			return true, p
 		}
