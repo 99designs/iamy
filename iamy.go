@@ -12,7 +12,7 @@ import (
 var (
 	Version    string = "dev"
 	defaultDir string
-	dryRun *bool
+	dryRun     *bool
 )
 
 type logWriter struct{ *log.Logger }
