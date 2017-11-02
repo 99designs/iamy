@@ -205,7 +205,7 @@ func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesO
 			profile.Roles = append(profile.Roles, role)
 		}
 		a.data.InstanceProfiles = append(a.data.InstanceProfiles, &profile)
-        }
+	}
 	return nil
 }
 

@@ -420,20 +420,20 @@ func (a *awsSyncCmdGenerator) updateInstanceProfiles() {
 	for _, toInstanceProfile := range a.to.InstanceProfiles {
 		if found, fromInstanceProfile := a.from.FindInstanceProfileByName(toInstanceProfile.Name, toInstanceProfile.Path); found {
 			// remove old roles from instance profile
-                        for _, role := range stringSetDifference(fromInstanceProfile.Roles, toInstanceProfile.Roles) {
-                                a.cmds.Add("aws", "iam", "remove-role-from-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+			for _, role := range stringSetDifference(fromInstanceProfile.Roles, toInstanceProfile.Roles) {
+				a.cmds.Add("aws", "iam", "remove-role-from-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
 			}
 
-                        // add new roles to instance profile
-                        for _, role := range stringSetDifference(toInstanceProfile.Roles, fromInstanceProfile.Roles) {
-                                a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
-                        }
+			// add new roles to instance profile
+			for _, role := range stringSetDifference(toInstanceProfile.Roles, fromInstanceProfile.Roles) {
+				a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+			}
 		} else {
-                        // Create instance profile
+			// Create instance profile
 			a.cmds.Add("aws", "create-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--path", path(toInstanceProfile.Path))
-                        for _, role := range toInstanceProfile.Roles {
-                                a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
-                        }
+			for _, role := range toInstanceProfile.Roles {
+				a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+			}
 		}
 	}
 }
