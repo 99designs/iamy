@@ -430,7 +430,7 @@ func (a *awsSyncCmdGenerator) updateInstanceProfiles() {
                         }
 		} else {
                         // Create instance profile
-			a.cmds.Add("aws","create-instance-profile","--instance-profile-name",toInstanceProfile.Name,"--path",path(toInstanceProfile.Path))
+			a.cmds.Add("aws", "create-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--path", path(toInstanceProfile.Path))
                         for _, role := range toInstanceProfile.Roles {
                                 a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
                         }
