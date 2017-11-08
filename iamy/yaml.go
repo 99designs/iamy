@@ -41,7 +41,7 @@ func (a *YamlLoadDumper) getFilesRecursively() ([]string, error) {
 		}
 
 		if !info.IsDir() {
-			paths = append(paths, path)
+			paths = append(paths, filepath.ToSlash(path))
 		}
 
 		return nil
