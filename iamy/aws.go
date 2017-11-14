@@ -105,6 +105,7 @@ func (a *AwsFetcher) fetchS3Data() error {
 }
 func (a *AwsFetcher) fetchIamData() error {
 	var populateIamDataErr error
+	var populateInstanceProfileErr error
 	err := a.iam.GetAccountAuthorizationDetailsPages(
 		&iam.GetAccountAuthorizationDetailsInput{
 			Filter: aws.StringSlice([]string{
@@ -119,7 +120,6 @@ func (a *AwsFetcher) fetchIamData() error {
 			if populateIamDataErr != nil {
 				return false
 			}
-
 			return true
 		},
 	)
@@ -129,7 +129,21 @@ func (a *AwsFetcher) fetchIamData() error {
 	if err != nil {
 		return err
 	}
-
+	// Fetch instance profiles
+	err = a.iam.ListInstanceProfilesPages(&iam.ListInstanceProfilesInput{},
+		func(resp *iam.ListInstanceProfilesOutput, lastPage bool) bool {
+			populateInstanceProfileErr = a.populateInstanceProfileData(resp)
+			if populateInstanceProfileErr != nil {
+				return false
+			}
+			return true
+		})
+	if populateInstanceProfileErr != nil {
+		return err
+	}
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -174,6 +188,25 @@ func (a *AwsFetcher) marshalRoleDescriptionAsync(roleName string, target *string
 			a.descriptionFetchError = err
 		}
 	}()
+}
+
+func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesOutput) error {
+	for _, profileResp := range resp.InstanceProfiles {
+		if cfnResourceRegexp.MatchString(*profileResp.InstanceProfileName) {
+			log.Printf("Skipping CloudFormation generated instance profile %s", *profileResp.InstanceProfileName)
+			continue
+		}
+		profile := InstanceProfile{iamService: iamService{
+			Name: *profileResp.InstanceProfileName,
+			Path: *profileResp.Path,
+		}}
+		for _, roleResp := range profileResp.Roles {
+			role := *(roleResp.RoleName)
+			profile.Roles = append(profile.Roles, role)
+		}
+		a.data.InstanceProfiles = append(a.data.InstanceProfiles, &profile)
+	}
+	return nil
 }
 
 func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {

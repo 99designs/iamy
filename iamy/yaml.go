@@ -13,7 +13,7 @@ import (
 )
 
 const pathTemplateBlob = "{{.Account}}/{{.Resource.Service}}/{{.Resource.ResourceType}}{{.Resource.ResourcePath}}{{.Resource.ResourceName}}.yaml"
-const pathRegexBlob = `^(?P<account>[^/]+)/(?P<entity>(iam/user|iam/group|iam/policy|iam/role|s3))(?P<resourcepath>.*/)(?P<resourcename>[^/]+)\.yaml$`
+const pathRegexBlob = `^(?P<account>[^/]+)/(?P<entity>(iam/instance-profile|iam/user|iam/group|iam/policy|iam/role|s3))(?P<resourcepath>.*/)(?P<resourcename>[^/]+)\.yaml$`
 
 var pathTemplate = template.Must(template.New("").Parse(pathTemplateBlob))
 var pathRegex = regexp.MustCompile(pathRegexBlob)
@@ -106,6 +106,10 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 				p := Policy{iamService: nameAndPath}
 				err = a.unmarshalYamlFile(fp, &p)
 				accounts[accountid].addPolicy(&p)
+			case "iam/instance-profile":
+				profile := InstanceProfile{iamService: nameAndPath}
+				err = a.unmarshalYamlFile(fp, &profile)
+				accounts[accountid].addInstanceProfile(&profile)
 			case "s3":
 				bp := BucketPolicy{BucketName: name}
 				err = a.unmarshalYamlFile(fp, &bp)
@@ -164,6 +168,12 @@ func (f *YamlLoadDumper) Dump(accountData *AccountData, canDelete bool) error {
 
 	for _, role := range accountData.Roles {
 		if err := f.writeResource(accountData.Account, role); err != nil {
+			return err
+		}
+	}
+
+	for _, profile := range accountData.InstanceProfiles {
+		if err := f.writeResource(accountData.Account, profile); err != nil {
 			return err
 		}
 	}

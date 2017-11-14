@@ -186,6 +186,12 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 				"--policy-arn", Arn(fromPolicy, a.to.Account))
 		}
 	}
+	for _, fromInstanceProfile := range a.from.InstanceProfiles {
+		if found, _ := a.to.FindInstanceProfileByName(fromInstanceProfile.Name, fromInstanceProfile.Path); !found {
+			a.cmds.Add("aws", "iam", "delete-instance-profile",
+				"--instance-profile-name", fromInstanceProfile.Name)
+		}
+	}
 }
 
 func (a *awsSyncCmdGenerator) updatePolicies() {
@@ -409,6 +415,28 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 		}
 	}
 }
+func (a *awsSyncCmdGenerator) updateInstanceProfiles() {
+	// update instance profiles
+	for _, toInstanceProfile := range a.to.InstanceProfiles {
+		if found, fromInstanceProfile := a.from.FindInstanceProfileByName(toInstanceProfile.Name, toInstanceProfile.Path); found {
+			// remove old roles from instance profile
+			for _, role := range stringSetDifference(fromInstanceProfile.Roles, toInstanceProfile.Roles) {
+				a.cmds.Add("aws", "iam", "remove-role-from-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+			}
+
+			// add new roles to instance profile
+			for _, role := range stringSetDifference(toInstanceProfile.Roles, fromInstanceProfile.Roles) {
+				a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+			}
+		} else {
+			// Create instance profile
+			a.cmds.Add("aws", "create-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--path", path(toInstanceProfile.Path))
+			for _, role := range toInstanceProfile.Roles {
+				a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+			}
+		}
+	}
+}
 
 func (a *awsSyncCmdGenerator) updateBucketPolicies() {
 	for _, fromBucketPolicy := range a.from.BucketPolicies {
@@ -437,6 +465,7 @@ func (a *awsSyncCmdGenerator) GenerateCmds() CmdList {
 	a.updateRoles()
 	a.updateGroups()
 	a.updateUsers()
+	a.updateInstanceProfiles()
 	a.updateBucketPolicies()
 	a.deleteOldEntities()
 
