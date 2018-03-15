@@ -2,6 +2,7 @@ package iamy
 
 import (
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,6 +14,7 @@ import (
 )
 
 const NoSuchBucketPolicyErrCode = "NoSuchBucketPolicy"
+const NoSuchBucketErrCode = "NoSuchBucket"
 
 func newRegionClientMap(s *session.Session) *regionClientMap {
 	return &regionClientMap{
@@ -109,6 +111,12 @@ func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 			defer wg.Done()
 			err = c.populateBucket(&b)
 			if err != nil {
+				if awsErr, ok := err.(awserr.Error); ok {
+					if awsErr.Code() == NoSuchBucketErrCode {
+						log.Printf("Skipped deleted but still visible bucket %s", b.name)
+						return
+					}
+				}
 				oneOfTheErrorsDuringPopulation = errors.New(fmt.Sprintf("Error while getting details for S3 bucket %s: %s", b.name, err))
 			}
 		}()
