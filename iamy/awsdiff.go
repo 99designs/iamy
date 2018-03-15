@@ -461,14 +461,14 @@ func (a *awsSyncCmdGenerator) updateBucketPolicies() {
 				}
 				if fromBucketPolicy.Policy.JsonString() == deletedPolicy.JsonString() {
 					isToAccountUpToDate = true
-					log.Printf("Skipping deleted bucket %s",toBucketPolicy.BucketName)
+					log.Printf("Skipping deleted bucket %s", toBucketPolicy.BucketName)
 				}
 			}
 			if !isToAccountUpToDate {
 				a.cmds.Add("aws", "s3api", "put-bucket-policy", "--bucket", toBucketPolicy.BucketName, "--policy", toBucketPolicy.Policy.JsonString())
 			}
 		} else {
-			log.Printf("Skipping non-existant bucket %s",toBucketPolicy.BucketName)
+			log.Printf("Skipping non-existant bucket %s", toBucketPolicy.BucketName)
 		}
 	}
 }
