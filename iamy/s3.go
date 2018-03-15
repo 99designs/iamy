@@ -92,6 +92,25 @@ func (c *s3Client) populateBucket(b *bucket) error {
 	return err
 }
 
+func (c *s3Client) bucketExistsByName(name string) bool {
+	b := bucket{name: name}
+	_, err := c.GetBucketLocation(&s3.GetBucketLocationInput{Bucket: aws.String(b.name)})
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
+}
+
+func (c *s3Client) bucketExists(b *bucket) bool {
+	_, err := c.GetBucketLocation(&s3.GetBucketLocationInput{Bucket: aws.String(b.name)})
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
+}
+
 func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 	bucketListResp, err := c.ListBuckets(&s3.ListBucketsInput{})
 	if err != nil {
@@ -103,20 +122,19 @@ func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 	buckets := []*bucket{}
 
 	for _, rb := range bucketListResp.Buckets {
+
 		b := bucket{name: *rb.Name}
 		buckets = append(buckets, &b)
-
+		if !c.bucketExists(&b) {
+			log.Printf("Flagging deleted but still visible bucket %s to be ignored", b.name)
+			b.policyJson = "{ \"DELETED\": true }"
+			continue
+		}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			err = c.populateBucket(&b)
 			if err != nil {
-				if awsErr, ok := err.(awserr.Error); ok {
-					if awsErr.Code() == NoSuchBucketErrCode {
-						log.Printf("Skipping deleted but still visible bucket %s", b.name)
-						return
-					}
-				}
 				oneOfTheErrorsDuringPopulation = errors.New(fmt.Sprintf("Error while getting details for S3 bucket %s: %s", b.name, err))
 			}
 		}()

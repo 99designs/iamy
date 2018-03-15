@@ -2,6 +2,7 @@ package iamy
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 )
@@ -184,6 +185,12 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 			}
 			a.cmds.Add("aws", "iam", "delete-policy",
 				"--policy-arn", Arn(fromPolicy, a.to.Account))
+		}
+	}
+	for _, fromInstanceProfile := range a.from.InstanceProfiles {
+		if found, _ := a.to.FindInstanceProfileByName(fromInstanceProfile.Name, fromInstanceProfile.Path); !found {
+			a.cmds.Add("aws", "iam", "delete-instance-profile",
+				"--instance-profile-name", fromInstanceProfile.Name)
 		}
 	}
 }
@@ -409,8 +416,34 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 		}
 	}
 }
+func (a *awsSyncCmdGenerator) updateInstanceProfiles() {
+	// update instance profiles
+	for _, toInstanceProfile := range a.to.InstanceProfiles {
+		if found, fromInstanceProfile := a.from.FindInstanceProfileByName(toInstanceProfile.Name, toInstanceProfile.Path); found {
+			// remove old roles from instance profile
+			for _, role := range stringSetDifference(fromInstanceProfile.Roles, toInstanceProfile.Roles) {
+				a.cmds.Add("aws", "iam", "remove-role-from-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+			}
+
+			// add new roles to instance profile
+			for _, role := range stringSetDifference(toInstanceProfile.Roles, fromInstanceProfile.Roles) {
+				a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+			}
+		} else {
+			// Create instance profile
+			a.cmds.Add("aws", "create-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--path", path(toInstanceProfile.Path))
+			for _, role := range toInstanceProfile.Roles {
+				a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+			}
+		}
+	}
+}
 
 func (a *awsSyncCmdGenerator) updateBucketPolicies() {
+	s := awsSession()
+	s3 := newS3Client(s)
+	deletedPolicy, _ := NewPolicyDocumentFromEncodedJson("{ \"DELETED\": true }")
+
 	for _, fromBucketPolicy := range a.from.BucketPolicies {
 		if found, _ := a.to.FindBucketPolicyByBucketName(fromBucketPolicy.BucketName); !found {
 			// remove bucket policy
@@ -419,15 +452,23 @@ func (a *awsSyncCmdGenerator) updateBucketPolicies() {
 	}
 
 	for _, toBucketPolicy := range a.to.BucketPolicies {
-		isToAccountUpToDate := false
-		if found, fromBucketPolicy := a.from.FindBucketPolicyByBucketName(toBucketPolicy.BucketName); found {
-			if fromBucketPolicy.Policy.JsonString() == toBucketPolicy.Policy.JsonString() {
-				isToAccountUpToDate = true
+		// Deal with case we have a policy file but the bucket doesn't exist
+		if s3.bucketExistsByName(toBucketPolicy.BucketName) {
+			isToAccountUpToDate := false
+			if found, fromBucketPolicy := a.from.FindBucketPolicyByBucketName(toBucketPolicy.BucketName); found {
+				if fromBucketPolicy.Policy.JsonString() == toBucketPolicy.Policy.JsonString() {
+					isToAccountUpToDate = true
+				}
+				if fromBucketPolicy.Policy.JsonString() == deletedPolicy.JsonString() {
+					isToAccountUpToDate = true
+					log.Printf("Skipping deleted bucket %s",toBucketPolicy.BucketName)
+				}
 			}
-		}
-
-		if !isToAccountUpToDate {
-			a.cmds.Add("aws", "s3api", "put-bucket-policy", "--bucket", toBucketPolicy.BucketName, "--policy", toBucketPolicy.Policy.JsonString())
+			if !isToAccountUpToDate {
+				a.cmds.Add("aws", "s3api", "put-bucket-policy", "--bucket", toBucketPolicy.BucketName, "--policy", toBucketPolicy.Policy.JsonString())
+			}
+		} else {
+			log.Printf("Skipping non-existant bucket %s",toBucketPolicy.BucketName)
 		}
 	}
 }
@@ -437,6 +478,7 @@ func (a *awsSyncCmdGenerator) GenerateCmds() CmdList {
 	a.updateRoles()
 	a.updateGroups()
 	a.updateUsers()
+	a.updateInstanceProfiles()
 	a.updateBucketPolicies()
 	a.deleteOldEntities()
 
