@@ -113,7 +113,7 @@ func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 			if err != nil {
 				if awsErr, ok := err.(awserr.Error); ok {
 					if awsErr.Code() == NoSuchBucketErrCode {
-						log.Printf("Skipped deleted but still visible bucket %s", b.name)
+						log.Printf("Skipping deleted but still visible bucket %s", b.name)
 						return
 					}
 				}
