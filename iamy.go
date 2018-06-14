@@ -35,7 +35,7 @@ func main() {
 		pullDir   = pull.Flag("dir", "The directory to dump yaml files to").Default(defaultDir).Short('d').String()
 		canDelete = pull.Flag("delete", "Delete extraneous files from destination dir").Bool()
 		push      = kingpin.Command("push", "Syncs IAM users, groups and policies from files to the active AWS account")
-		pushDir   = push.Flag("dir", "The directoy to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
+		pushDir   = push.Flag("dir", "The directory to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
 	)
 	dryRun = kingpin.Flag("dry-run", "Show what would happen, but don't prompt to do it").Bool()
 
