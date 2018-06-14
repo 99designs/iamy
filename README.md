@@ -2,7 +2,7 @@
 
 IAMy is a tool for dumping and loading your AWS IAM configuration into YAML files.
 
-This allows you to use an [Infrastructure as Code](https://en.wikipedia.org/wiki/Infrastructure_as_Code) model to manage your IAM configuration, and allows you to operate configuration and change management on a higher level. For example, you might use a github repo with a pull request model for changes.
+This allows you to use an [Infrastructure as Code](https://en.wikipedia.org/wiki/Infrastructure_as_Code) model to manage your IAM configuration. For example, you might use a github repo with a pull request model for changes to IAM config.
 
 
 ## How it works
