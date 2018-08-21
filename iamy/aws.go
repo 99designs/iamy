@@ -18,6 +18,8 @@ type AwsFetcher struct {
 	// when pushing to AWS
 	SkipFetchingPolicyAndRoleDescriptions bool
 
+	Debug *log.Logger
+
 	iam     *iamClient
 	s3      *s3Client
 	account *Account
@@ -353,7 +355,7 @@ func (a *AwsFetcher) getAccount() (*Account, error) {
 	var err error
 	acct := Account{}
 
-	acct.Id, err = GetAwsAccountId(awsSession())
+	acct.Id, err = GetAwsAccountId(awsSession(), a.Debug)
 	if err == aws.ErrMissingRegion {
 		return nil, errors.New("Error determining the AWS account id - check the AWS_REGION environment variable is set")
 	}

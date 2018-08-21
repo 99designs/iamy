@@ -21,6 +21,7 @@ func PushCommand(ui Ui, input PushCommandInput) {
 	}
 	aws := iamy.AwsFetcher{
 		SkipFetchingPolicyAndRoleDescriptions: true,
+		Debug: ui.Debug,
 	}
 
 	allDataFromYaml, err := yaml.Load()
