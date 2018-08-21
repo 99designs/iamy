@@ -61,6 +61,7 @@ func newS3Client(s *session.Session) *s3Client {
 type bucket struct {
 	name       string
 	policyJson string
+	exists     bool
 }
 
 func (c *s3Client) withRegion(region string) s3iface.S3API {
@@ -107,13 +108,36 @@ func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err = c.populateBucket(&b)
+			err := c.populateBucket(&b)
 			if err != nil {
-				oneOfTheErrorsDuringPopulation = errors.New(fmt.Sprintf("Error while getting details for S3 bucket %s: %s", b.name, err))
+				if awsErr, ok := err.(awserr.Error); ok {
+					if awsErr.Code() != s3.ErrCodeNoSuchBucket {
+						oneOfTheErrorsDuringPopulation = errors.New(fmt.Sprintf("Error while getting details for S3 bucket %s: %s", b.name, err))
+					}
+				}
+			} else {
+				b.exists = true
 			}
 		}()
 	}
 	wg.Wait()
+
+	for _, b := range buckets {
+		if !b.exists {
+			// If we depend on the bucket index passed in from the for loop above it'll fail when we remove more than one item
+			// Because the bucket has been modified by the below code, so the index number is out of date
+			// So we have to re-resolve the index number
+			var bucketIndex int
+			for i, bucket := range buckets {
+				if b.name == bucket.name {
+					bucketIndex = i
+				}
+			}
+			// Remove the bucket from the list by making it the last element in the list then truncating the last element
+			buckets[len(buckets)-1], buckets[bucketIndex] = buckets[bucketIndex], buckets[len(buckets)-1]
+			buckets = buckets[:len(buckets)-1]
+		}
+	}
 
 	if oneOfTheErrorsDuringPopulation != nil {
 		return nil, oneOfTheErrorsDuringPopulation
