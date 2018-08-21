@@ -2,6 +2,7 @@ package iamy
 
 import (
 	"errors"
+	"log"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,19 +13,25 @@ import (
 
 // GetAwsAccountId determines the AWS account id associated
 // with the given session
-func GetAwsAccountId(sess *session.Session) (string, error) {
+func GetAwsAccountId(sess *session.Session, debug *log.Logger) (string, error) {
+	debug.Println("Finding AWS account ID via GetUser")
 	accountid, err := determineAccountIdViaGetUser(sess)
 	if err == nil {
+		debug.Println("AWS account ID:", accountid)
 		return accountid, nil
 	}
 
+	debug.Println("Finding AWS account ID via ListUsers")
 	accountid, err = determineAccountIdViaListUsers(sess)
 	if err == nil {
+		debug.Println("AWS account ID:", accountid)
 		return accountid, nil
 	}
 
+	debug.Println("Finding AWS account ID via DefaultSecurityGroup")
 	accountid, err = determineAccountIdViaDefaultSecurityGroup(sess)
 	if err == nil {
+		debug.Println("AWS account ID:", accountid)
 		return accountid, nil
 	}
 
