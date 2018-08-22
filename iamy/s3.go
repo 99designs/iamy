@@ -122,20 +122,11 @@ func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 	}
 	wg.Wait()
 
+	bucketsExist := []*bucket{}
+
 	for _, b := range buckets {
-		if !b.exists {
-			// If we depend on the bucket index passed in from the for loop above it'll fail when we remove more than one item
-			// Because the bucket has been modified by the below code, so the index number is out of date
-			// So we have to re-resolve the index number
-			var bucketIndex int
-			for i, bucket := range buckets {
-				if b.name == bucket.name {
-					bucketIndex = i
-				}
-			}
-			// Remove the bucket from the list by making it the last element in the list then truncating the last element
-			buckets[len(buckets)-1], buckets[bucketIndex] = buckets[bucketIndex], buckets[len(buckets)-1]
-			buckets = buckets[:len(buckets)-1]
+		if b.exists {
+			bucketsExist = append(bucketsExist, b)
 		}
 	}
 
@@ -143,7 +134,7 @@ func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 		return nil, oneOfTheErrorsDuringPopulation
 	}
 
-	return buckets, nil
+	return bucketsExist, nil
 }
 
 func (c *s3Client) GetBucketPolicyDoc(name, region string) (string, error) {
