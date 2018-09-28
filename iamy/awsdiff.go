@@ -188,6 +188,9 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 	}
 	for _, fromInstanceProfile := range a.from.InstanceProfiles {
 		if found, _ := a.to.FindInstanceProfileByName(fromInstanceProfile.Name, fromInstanceProfile.Path); !found {
+			for _, roleName := range fromInstanceProfile.Roles {
+				a.cmds.Add("aws", "iam", "remove-role-from-instance-profile", "--instance-profile-name", fromInstanceProfile.Name, "--role-name", roleName)
+			}
 			a.cmds.Add("aws", "iam", "delete-instance-profile",
 				"--instance-profile-name", fromInstanceProfile.Name)
 		}
