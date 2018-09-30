@@ -188,6 +188,9 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 	}
 	for _, fromInstanceProfile := range a.from.InstanceProfiles {
 		if found, _ := a.to.FindInstanceProfileByName(fromInstanceProfile.Name, fromInstanceProfile.Path); !found {
+			for _, roleName := range fromInstanceProfile.Roles {
+				a.cmds.Add("aws", "iam", "remove-role-from-instance-profile", "--instance-profile-name", fromInstanceProfile.Name, "--role-name", roleName)
+			}
 			a.cmds.Add("aws", "iam", "delete-instance-profile",
 				"--instance-profile-name", fromInstanceProfile.Name)
 		}
@@ -430,7 +433,7 @@ func (a *awsSyncCmdGenerator) updateInstanceProfiles() {
 			}
 		} else {
 			// Create instance profile
-			a.cmds.Add("aws", "create-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--path", path(toInstanceProfile.Path))
+			a.cmds.Add("aws", "iam", "create-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--path", path(toInstanceProfile.Path))
 			for _, role := range toInstanceProfile.Roles {
 				a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
 			}
