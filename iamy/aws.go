@@ -1,6 +1,7 @@
 package iamy
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"sync"
@@ -194,10 +195,11 @@ func (a *AwsFetcher) marshalRoleDescriptionAsync(roleName string, target *string
 
 func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesOutput) error {
 	for _, profileResp := range resp.InstanceProfiles {
-		if cfnResourceRegexp.MatchString(*profileResp.InstanceProfileName) {
-			log.Printf("Skipping CloudFormation generated instance profile %s", *profileResp.InstanceProfileName)
+		if ok, err := isSkippableManagedResource(*profileResp.InstanceProfileName); ok {
+			log.Printf(err)
 			continue
 		}
+
 		profile := InstanceProfile{iamService: iamService{
 			Name: *profileResp.InstanceProfileName,
 			Path: *profileResp.Path,
@@ -213,8 +215,8 @@ func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesO
 
 func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
 	for _, userResp := range resp.UserDetailList {
-		if cfnResourceRegexp.MatchString(*userResp.UserName) {
-			log.Printf("Skipping CloudFormation generated user %s", *userResp.UserName)
+		if ok, err := isSkippableManagedResource(*userResp.UserName); ok {
+			log.Printf(err)
 			continue
 		}
 
@@ -237,8 +239,8 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 	}
 
 	for _, groupResp := range resp.GroupDetailList {
-		if cfnResourceRegexp.MatchString(*groupResp.GroupName) {
-			log.Printf("Skipping CloudFormation generated group %s", *groupResp.GroupName)
+		if ok, err := isSkippableManagedResource(*groupResp.GroupName); ok {
+			log.Printf(err)
 			continue
 		}
 
@@ -258,8 +260,8 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 	}
 
 	for _, roleResp := range resp.RoleDetailList {
-		if cfnResourceRegexp.MatchString(*roleResp.RoleName) {
-			log.Printf("Skipping CloudFormation generated role %s", *roleResp.RoleName)
+		if ok, err := isSkippableManagedResource(*roleResp.RoleName); ok {
+			log.Printf(err)
 			continue
 		}
 
@@ -288,8 +290,8 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 	}
 
 	for _, policyResp := range resp.Policies {
-		if cfnResourceRegexp.MatchString(*policyResp.PolicyName) {
-			log.Printf("Skipping CloudFormation generated policy %s", *policyResp.PolicyName)
+		if ok, err := isSkippableManagedResource(*policyResp.PolicyName); ok {
+			log.Printf(err)
 			continue
 		}
 
@@ -372,4 +374,17 @@ func (a *AwsFetcher) getAccount() (*Account, error) {
 	}
 
 	return &acct, nil
+}
+
+// isSkippableResource takes the resource name as a string and checks it
+// against known resources that we shouldn't need to manage as it will
+// already be managed by another process (such as Cloudformation roles).
+// Returns a boolean of whether it can be skipped and a string of the
+// reasoning why it was skipped.
+func isSkippableManagedResource(resourceName string) (bool, string) {
+	if cfnResourceRegexp.MatchString(resourceName) {
+		return true, fmt.Sprintf("CloudFormation generated resource %s", resourceName)
+	}
+
+	return false, ""
 }
