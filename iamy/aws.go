@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -376,14 +377,20 @@ func (a *AwsFetcher) getAccount() (*Account, error) {
 	return &acct, nil
 }
 
-// isSkippableResource takes the resource name as a string and checks it
-// against known resources that we shouldn't need to manage as it will
-// already be managed by another process (such as Cloudformation roles).
+// isSkippableResource takes the resource identifier as a string and
+// checks it against known resources that we shouldn't need to manage as
+// it will already be managed by another process (such as Cloudformation
+// roles).
+//
 // Returns a boolean of whether it can be skipped and a string of the
 // reasoning why it was skipped.
-func isSkippableManagedResource(resourceName string) (bool, string) {
-	if cfnResourceRegexp.MatchString(resourceName) {
-		return true, fmt.Sprintf("CloudFormation generated resource %s", resourceName)
+func isSkippableManagedResource(resourceIdentifier string) (bool, string) {
+	if cfnResourceRegexp.MatchString(resourceIdentifier) {
+		return true, fmt.Sprintf("CloudFormation generated resource %s", resourceIdentifier)
+	}
+
+	if strings.Contains(resourceIdentifier, "AWSServiceRole") || strings.Contains(resourceIdentifier, "aws-service-role") {
+		return true, fmt.Sprintf("AWS Service role generated resource %s", resourceIdentifier)
 	}
 
 	return false, ""
