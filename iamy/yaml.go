@@ -91,7 +91,10 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 
 			switch entity {
 			case "iam/user":
-				u := User{iamService: nameAndPath}
+				u := User{
+					iamService: nameAndPath,
+					Tags:       make(map[string]string),
+				}
 				err = a.unmarshalYamlFile(fp, &u)
 				accounts[accountid].addUser(&u)
 			case "iam/group":

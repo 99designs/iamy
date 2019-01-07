@@ -218,10 +218,13 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 			continue
 		}
 
-		user := User{iamService: iamService{
-			Name: *userResp.UserName,
-			Path: *userResp.Path,
-		}}
+		user := User{
+			iamService: iamService{
+				Name: *userResp.UserName,
+				Path: *userResp.Path,
+			},
+			Tags: make(map[string]string),
+		}
 
 		for _, g := range userResp.GroupList {
 			user.Groups = append(user.Groups, *g)
@@ -231,6 +234,9 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 		}
 		if err := a.populateInlinePolicies(userResp.UserPolicyList, &user.InlinePolicies); err != nil {
 			return err
+		}
+		for _, t := range userResp.Tags {
+			user.Tags[*t.Key] = *t.Value
 		}
 
 		a.data.Users = append(a.data.Users, &user)

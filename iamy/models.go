@@ -68,9 +68,10 @@ func (s iamService) ResourcePath() string {
 
 type User struct {
 	iamService     `json:"-"`
-	Groups         []string       `json:"Groups,omitempty"`
-	InlinePolicies []InlinePolicy `json:"InlinePolicies,omitempty"`
-	Policies       []string       `json:"Policies,omitempty"`
+	Groups         []string          `json:"Groups,omitempty"`
+	InlinePolicies []InlinePolicy    `json:"InlinePolicies,omitempty"`
+	Policies       []string          `json:"Policies,omitempty"`
+	Tags           map[string]string `json:"Tags,omitempty"`
 }
 
 func (u User) ResourceType() string {
