@@ -21,10 +21,10 @@
 			"revisionTime": "2015-10-22T06:55:26Z"
 		},
 		{
-			"checksumSHA1": "93SqoimxzanHF2QFWx+rCaLZAh8=",
+			"checksumSHA1": "qjlqaA74rYrV0HckggjlOgE7wK8=",
 			"path": "github.com/aws/aws-sdk-go/aws",
-			"revision": "aa827991a3c164e7d129a20edf80028605195eef",
-			"revisionTime": "2017-06-21T21:35:11Z"
+			"revision": "923b7b1b0525654010bcf282e5dc2f7fd455027a",
+			"revisionTime": "2019-01-04T23:13:27Z"
 		},
 		{
 			"checksumSHA1": "Y9W+4GimK4Fuxq+vyIskVYFRnX4=",
@@ -45,10 +45,10 @@
 			"revisionTime": "2017-06-21T21:35:11Z"
 		},
 		{
-			"checksumSHA1": "ieAJ+Cvp/PKv1LpUEnUXpc3OI6E=",
+			"checksumSHA1": "uEJU4I6dTKaraQKvrljlYKUZwoc=",
 			"path": "github.com/aws/aws-sdk-go/aws/client/metadata",
-			"revision": "aa827991a3c164e7d129a20edf80028605195eef",
-			"revisionTime": "2017-06-21T21:35:11Z"
+			"revision": "923b7b1b0525654010bcf282e5dc2f7fd455027a",
+			"revisionTime": "2019-01-04T23:13:27Z"
 		},
 		{
 			"checksumSHA1": "7/8j/q0TWtOgXyvEcv4B2Dhl00o=",
@@ -99,10 +99,10 @@
 			"revisionTime": "2017-06-21T21:35:11Z"
 		},
 		{
-			"checksumSHA1": "8eN3YdBuWsN8bTC7/OGuzREf+oA=",
+			"checksumSHA1": "ulNJ2Se99ODS+wJ7C5IM11U7tbk=",
 			"path": "github.com/aws/aws-sdk-go/aws/request",
-			"revision": "aa827991a3c164e7d129a20edf80028605195eef",
-			"revisionTime": "2017-06-21T21:35:11Z"
+			"revision": "923b7b1b0525654010bcf282e5dc2f7fd455027a",
+			"revisionTime": "2019-01-04T23:13:27Z"
 		},
 		{
 			"checksumSHA1": "Y20DEtMtbfE9qTtmoi2NYV1x7aA=",
@@ -115,6 +115,12 @@
 			"path": "github.com/aws/aws-sdk-go/aws/signer/v4",
 			"revision": "aa827991a3c164e7d129a20edf80028605195eef",
 			"revisionTime": "2017-06-21T21:35:11Z"
+		},
+		{
+			"checksumSHA1": "wjxQlU1PYxrDRFoL1Vek8Wch7jk=",
+			"path": "github.com/aws/aws-sdk-go/internal/sdkio",
+			"revision": "923b7b1b0525654010bcf282e5dc2f7fd455027a",
+			"revisionTime": "2019-01-04T23:13:27Z"
 		},
 		{
 			"checksumSHA1": "04ypv4x12l4q0TksA1zEVsmgpvw=",
@@ -171,10 +177,10 @@
 			"revisionTime": "2017-06-21T21:35:11Z"
 		},
 		{
-			"checksumSHA1": "sUTXkrAohDlfGKgkLEYh9UawmL0=",
+			"checksumSHA1": "D2EX6UbE+d1LY6M4faM63iBhthU=",
 			"path": "github.com/aws/aws-sdk-go/service/iam",
-			"revision": "aa827991a3c164e7d129a20edf80028605195eef",
-			"revisionTime": "2017-06-21T21:35:11Z"
+			"revision": "923b7b1b0525654010bcf282e5dc2f7fd455027a",
+			"revisionTime": "2019-01-04T23:13:27Z"
 		},
 		{
 			"checksumSHA1": "Gaviz5nCjR89robzxcT85QRJufk=",
