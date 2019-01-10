@@ -78,6 +78,14 @@ func path(v string) string {
 	return v
 }
 
+func mapTagsToString(tags map[string]string) string {
+	var result []string
+	for k, v := range tags {
+		result = append(result, "Key="+k+",Value="+v)
+	}
+	return strings.Join(result, ",")
+}
+
 type awsSyncCmdGenerator struct {
 	from, to *AccountData
 	cmds     CmdList
@@ -397,9 +405,19 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 				a.cmds.Add("aws", "iam", "attach-user-policy", "--user-name", toUser.Name, "--policy-arn", a.to.Account.policyArnFromString(p))
 			}
 
+			// remove old tags
+			for tagKey, _ := range mapStringSetDifference(fromUser.Tags, toUser.Tags) {
+				a.cmds.Add("aws", "iam", "untag-user", "--user-name", toUser.Name, "--tag-keys", tagKey)
+			}
+
+			// attach new tags
+			for tagKey, tagValue := range mapStringSetDifference(toUser.Tags, fromUser.Tags) {
+				a.cmds.Add("aws", "iam", "tag-user", "--user-name", toUser.Name, "--tags", "Key="+tagKey+",Value="+tagValue)
+			}
+
 		} else {
 			// Create user
-			a.cmds.Add("aws", "iam", "create-user", "--user-name", toUser.Name, "--path", path(toUser.Path))
+			a.cmds.Add("aws", "iam", "create-user", "--user-name", toUser.Name, "--path", path(toUser.Path), "--tags", mapTagsToString(toUser.Tags))
 
 			// add new groups
 			for _, g := range toUser.Groups {
