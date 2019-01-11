@@ -288,11 +288,11 @@ func (a *awsSyncCmdGenerator) updateRoles() {
 				"iam", "create-role",
 				"--role-name", toRole.Name,
 				"--path", path(toRole.Path),
+				"--assume-role-policy-document", toRole.AssumeRolePolicyDocument.JsonString(),
 			}
 			if toRole.Description != "" {
 				args = append(args, "--description", toRole.Description)
 			}
-			args = append(args, "--assume-role-policy-document", toRole.AssumeRolePolicyDocument.JsonString())
 			a.cmds.Add("aws", args...)
 
 			// add new inline policies
@@ -377,61 +377,88 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 
 			// remove old groups
 			for _, g := range stringSetDifference(fromUser.Groups, toUser.Groups) {
-				a.cmds.Add("aws", "iam", "remove-user-from-group", "--user-name", toUser.Name, "--group-name", g)
+				a.cmds.Add("aws", "iam", "remove-user-from-group",
+					"--user-name", toUser.Name,
+					"--group-name", g)
 			}
 
 			// add new groups
 			for _, g := range stringSetDifference(toUser.Groups, fromUser.Groups) {
-				a.cmds.Add("aws", "iam", "add-user-to-group", "--user-name", toUser.Name, "--group-name", g)
+				a.cmds.Add("aws", "iam", "add-user-to-group",
+					"--user-name", toUser.Name,
+					"--group-name", g)
 			}
 
 			// remove old inline policies
 			for _, ip := range inlinePolicySetDifference(fromUser.InlinePolicies, toUser.InlinePolicies) {
-				a.cmds.Add("aws", "iam", "delete-user-policy", "--user-name", toUser.Name, "--policy-name", ip.Name)
+				a.cmds.Add("aws", "iam", "delete-user-policy",
+					"--user-name", toUser.Name,
+					"--policy-name", ip.Name)
 			}
 
 			// add new inline policies
 			for _, ip := range inlinePolicySetDifference(toUser.InlinePolicies, fromUser.InlinePolicies) {
-				a.cmds.Add("aws", "iam", "put-user-policy", "--user-name", toUser.Name, "--policy-name", ip.Name, "--policy-document", ip.Policy.JsonString())
+				a.cmds.Add("aws", "iam", "put-user-policy",
+					"--user-name", toUser.Name,
+					"--policy-name", ip.Name,
+					"--policy-document", ip.Policy.JsonString())
 			}
 
 			// detach old managed policies
 			for _, p := range stringSetDifference(fromUser.Policies, toUser.Policies) {
-				a.cmds.Add("aws", "iam", "detach-user-policy", "--user-name", toUser.Name, "--policy-arn", a.to.Account.policyArnFromString(p))
+				a.cmds.Add("aws", "iam", "detach-user-policy",
+					"--user-name", toUser.Name,
+					"--policy-arn", a.to.Account.policyArnFromString(p))
 			}
 
 			// attach new managed policies
 			for _, p := range stringSetDifference(toUser.Policies, fromUser.Policies) {
-				a.cmds.Add("aws", "iam", "attach-user-policy", "--user-name", toUser.Name, "--policy-arn", a.to.Account.policyArnFromString(p))
+				a.cmds.Add("aws", "iam", "attach-user-policy",
+					"--user-name", toUser.Name,
+					"--policy-arn", a.to.Account.policyArnFromString(p))
 			}
 
 			// remove old tags
 			for tagKey, _ := range mapStringSetDifference(fromUser.Tags, toUser.Tags) {
-				a.cmds.Add("aws", "iam", "untag-user", "--user-name", toUser.Name, "--tag-keys", tagKey)
+				a.cmds.Add("aws", "iam", "untag-user",
+					"--user-name", toUser.Name,
+					"--tag-keys", tagKey)
 			}
 
 			// attach new tags
 			for tagKey, tagValue := range mapStringSetDifference(toUser.Tags, fromUser.Tags) {
-				a.cmds.Add("aws", "iam", "tag-user", "--user-name", toUser.Name, "--tags", "Key="+tagKey+",Value="+tagValue)
+				a.cmds.Add("aws", "iam", "tag-user",
+					"--user-name", toUser.Name,
+					"--tags", "Key="+tagKey+",Value="+tagValue)
 			}
 
 		} else {
 			// Create user
-			a.cmds.Add("aws", "iam", "create-user", "--user-name", toUser.Name, "--path", path(toUser.Path), "--tags", mapTagsToString(toUser.Tags))
+			a.cmds.Add("aws", "iam", "create-user",
+				"--user-name", toUser.Name,
+				"--path", path(toUser.Path),
+				"--tags", mapTagsToString(toUser.Tags))
 
 			// add new groups
 			for _, g := range toUser.Groups {
-				a.cmds.Add("aws", "iam", "add-user-to-group", "--user-name", toUser.Name, "--group-name", g)
+				a.cmds.Add("aws", "iam", "add-user-to-group",
+					"--user-name", toUser.Name,
+					"--group-name", g)
 			}
 
 			// add new inline policies
 			for _, ip := range toUser.InlinePolicies {
-				a.cmds.Add("aws", "iam", "put-user-policy", "--user-name", toUser.Name, "--policy-name", ip.Name, "--policy-document", ip.Policy.JsonString())
+				a.cmds.Add("aws", "iam", "put-user-policy",
+					"--user-name", toUser.Name,
+					"--policy-name", ip.Name,
+					"--policy-document", ip.Policy.JsonString())
 			}
 
 			// attach new managed policies
 			for _, p := range toUser.Policies {
-				a.cmds.Add("aws", "iam", "attach-user-policy", "--user-name", toUser.Name, "--policy-arn", a.to.Account.policyArnFromString(p))
+				a.cmds.Add("aws", "iam", "attach-user-policy",
+					"--user-name", toUser.Name,
+					"--policy-arn", a.to.Account.policyArnFromString(p))
 			}
 		}
 	}
@@ -442,18 +469,26 @@ func (a *awsSyncCmdGenerator) updateInstanceProfiles() {
 		if found, fromInstanceProfile := a.from.FindInstanceProfileByName(toInstanceProfile.Name, toInstanceProfile.Path); found {
 			// remove old roles from instance profile
 			for _, role := range stringSetDifference(fromInstanceProfile.Roles, toInstanceProfile.Roles) {
-				a.cmds.Add("aws", "iam", "remove-role-from-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+				a.cmds.Add("aws", "iam", "remove-role-from-instance-profile",
+					"--instance-profile-name", toInstanceProfile.Name,
+					"--role-name", role)
 			}
 
 			// add new roles to instance profile
 			for _, role := range stringSetDifference(toInstanceProfile.Roles, fromInstanceProfile.Roles) {
-				a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+				a.cmds.Add("aws", "iam", "add-role-to-instance-profile",
+					"--instance-profile-name", toInstanceProfile.Name,
+					"--role-name", role)
 			}
 		} else {
 			// Create instance profile
-			a.cmds.Add("aws", "iam", "create-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--path", path(toInstanceProfile.Path))
+			a.cmds.Add("aws", "iam", "create-instance-profile",
+				"--instance-profile-name", toInstanceProfile.Name,
+				"--path", path(toInstanceProfile.Path))
 			for _, role := range toInstanceProfile.Roles {
-				a.cmds.Add("aws", "iam", "add-role-to-instance-profile", "--instance-profile-name", toInstanceProfile.Name, "--role-name", role)
+				a.cmds.Add("aws", "iam", "add-role-to-instance-profile",
+					"--instance-profile-name", toInstanceProfile.Name,
+					"--role-name", role)
 			}
 		}
 	}
@@ -463,7 +498,8 @@ func (a *awsSyncCmdGenerator) updateBucketPolicies() {
 	for _, fromBucketPolicy := range a.from.BucketPolicies {
 		if found, _ := a.to.FindBucketPolicyByBucketName(fromBucketPolicy.BucketName); !found {
 			// remove bucket policy
-			a.cmds.Add("aws", "s3api", "delete-bucket-policy", "--bucket", fromBucketPolicy.BucketName)
+			a.cmds.Add("aws", "s3api", "delete-bucket-policy",
+				"--bucket", fromBucketPolicy.BucketName)
 		}
 	}
 
@@ -476,7 +512,9 @@ func (a *awsSyncCmdGenerator) updateBucketPolicies() {
 		}
 
 		if !isToAccountUpToDate {
-			a.cmds.Add("aws", "s3api", "put-bucket-policy", "--bucket", toBucketPolicy.BucketName, "--policy", toBucketPolicy.Policy.JsonString())
+			a.cmds.Add("aws", "s3api", "put-bucket-policy",
+				"--bucket", toBucketPolicy.BucketName,
+				"--policy", toBucketPolicy.Policy.JsonString())
 		}
 	}
 }
