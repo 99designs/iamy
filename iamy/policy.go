@@ -3,19 +3,13 @@ package iamy
 import (
 	"encoding/json"
 	"log"
-	"net/url"
 	"reflect"
 	"sort"
 )
 
-func NewPolicyDocumentFromEncodedJson(encoded string) (*PolicyDocument, error) {
-	jsonString, err := url.QueryUnescape(encoded)
-	if err != nil {
-		return nil, err
-	}
-
+func NewPolicyDocumentFromEncodedJson(jsonString string) (*PolicyDocument, error) {
 	var doc PolicyDocument
-	if err = json.Unmarshal([]byte(jsonString), &doc); err != nil {
+	if err := json.Unmarshal([]byte(jsonString), &doc); err != nil {
 		return nil, err
 	}
 

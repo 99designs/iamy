@@ -126,3 +126,10 @@ Actual:  %#v`, nt.description, nt.input, nt.expected, result)
 		}
 	}
 }
+
+func TestNewPolicyDocumentFromEncodedJson(t *testing.T) {
+	_, err := NewPolicyDocumentFromEncodedJson("{\"Version\":\"2012-10-17\",\"Id\":\"AllowPublicRead\",\"Statement\":[{\"Sid\":\"PublicReadBucketObjects\",\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::example.com/*\",\"Condition\":{\"StringEquals\":{\"aws:Referer\":\"%zz\"}}}]}")
+	if err != nil {
+		t.Errorf("Error decoding policy %s", err)
+	}
+}
