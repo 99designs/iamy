@@ -120,8 +120,11 @@ func (a *AwsFetcher) fetchIamData() error {
 			}),
 		},
 		func(resp *iam.GetAccountAuthorizationDetailsOutput, lastPage bool) bool {
+			// There's a bug here. This doesn't set the variable outside this function scope
+			// So IAMY just swallows any errors returned from populateIamData()
 			populateIamDataErr = a.populateIamData(resp)
 			if populateIamDataErr != nil {
+				log.Println("Error Fetching IAM Data")
 				return false
 			}
 			return true
