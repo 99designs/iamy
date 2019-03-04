@@ -3,15 +3,33 @@ package iamy
 import (
 	"encoding/json"
 	"log"
+	"net/url"
 	"reflect"
 	"sort"
 )
 
-func NewPolicyDocumentFromEncodedJson(jsonString string) (*PolicyDocument, error) {
+func NewPolicyDocumentFromJson(jsonString string) (*PolicyDocument, error) {
 	var doc PolicyDocument
 	if err := json.Unmarshal([]byte(jsonString), &doc); err != nil {
+		log.Printf("Error unmarshalling JSON %s %s", err, jsonString)
 		return nil, err
 	}
+	//log.Printf("Doc %s\nJSON: %s", doc, jsonString)
+
+	return &doc, nil
+}
+
+func NewPolicyDocumentFromEncodedJson(encoded string) (*PolicyDocument, error) {
+	jsonString, err := url.QueryUnescape(encoded)
+	if err != nil {
+		return nil, err
+	}
+	var doc PolicyDocument
+	if err := json.Unmarshal([]byte(jsonString), &doc); err != nil {
+		log.Printf("Error unmarshalling JSON %s %s", err, jsonString)
+		return nil, err
+	}
+	//log.Printf("Doc %s\nJSON: %s", doc, jsonString)
 
 	return &doc, nil
 }

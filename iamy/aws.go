@@ -92,7 +92,7 @@ func (a *AwsFetcher) fetchS3Data() error {
 			continue
 		}
 
-		policyDoc, err := NewPolicyDocumentFromEncodedJson(b.policyJson)
+		policyDoc, err := NewPolicyDocumentFromJson(b.policyJson)
 		if err != nil {
 			return errors.Wrap(err, "Error creating Policy document")
 		}
