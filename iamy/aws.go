@@ -22,7 +22,7 @@ type AwsFetcher struct {
 
 	Debug *log.Logger
 
-	iam     *iamClient
+	iam     iamClientiface
 	s3      *s3Client
 	account *Account
 	data    AccountData
