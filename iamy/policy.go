@@ -8,18 +8,23 @@ import (
 	"sort"
 )
 
+func NewPolicyDocumentFromJson(jsonString string) (*PolicyDocument, error) {
+	var doc PolicyDocument
+	if err := json.Unmarshal([]byte(jsonString), &doc); err != nil {
+		log.Printf("Error unmarshalling JSON %s %s", err, jsonString)
+		return nil, err
+	}
+
+	return &doc, nil
+}
+
 func NewPolicyDocumentFromEncodedJson(encoded string) (*PolicyDocument, error) {
 	jsonString, err := url.QueryUnescape(encoded)
 	if err != nil {
 		return nil, err
 	}
 
-	var doc PolicyDocument
-	if err = json.Unmarshal([]byte(jsonString), &doc); err != nil {
-		return nil, err
-	}
-
-	return &doc, nil
+	return NewPolicyDocumentFromJson(jsonString)
 }
 
 // PolicyDocument represents an AWS policy document.
