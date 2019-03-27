@@ -434,15 +434,15 @@ func (a *awsSyncCmdGenerator) updateUsers() {
 
 		} else {
 			// Create user
-      if len(mapTagsToString(toUser.Tags)) == 0 {
+			if len(mapTagsToString(toUser.Tags)) == 0 {
 				a.cmds.Add("aws", "iam", "create-user",
-				"--user-name", toUser.Name,
-				"--path", path(toUser.Path))
-      } else {
+					"--user-name", toUser.Name,
+					"--path", path(toUser.Path))
+			} else {
 				a.cmds.Add("aws", "iam", "create-user",
-				"--user-name", toUser.Name,
-				"--path", path(toUser.Path),
-				"--tags", mapTagsToString(toUser.Tags))
+					"--user-name", toUser.Name,
+					"--path", path(toUser.Path),
+					"--tags", mapTagsToString(toUser.Tags))
 			}
 
 			// add new groups
