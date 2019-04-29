@@ -99,24 +99,32 @@ func performVersionChecks() {
 	currentIAMyVersion, _ := semver.Make(Version)
 	log.Printf("current version is %s", currentIAMyVersion)
 
-	if _, err := os.Stat(versionFileName); !os.IsNotExist(err) {
-		log.Printf("%s found", versionFileName)
-		fileBytes, _ := ioutil.ReadFile(versionFileName)
-		fileContents := string(fileBytes)
-
-		if fileContents != "" {
-			re := regexp.MustCompile(`\d\.\d+\.\d`)
-			match := re.FindStringSubmatch(fileContents)
-			localDesiredVersion, _ := semver.Make(match[0])
-			log.Printf("local project wants version %s", localDesiredVersion)
-
-			// We don't want to notify users if the `Version` is "dev" as it's not
-			// actually too old. It could be that they are running non-released
-			// versions.
-			if Version != "dev" && currentIAMyVersion.LE(localDesiredVersion) {
-				fmt.Printf(versionTooOldError, currentIAMyVersion, localDesiredVersion)
-				os.Exit(1)
-			}
+	fileBytes, err := ioutil.ReadFile(versionFileName)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Printf("could not read version file %s, ignoring: %s", versionFileName, err)
 		}
+		return
+	}
+
+	log.Printf("%s detected", versionFileName)
+
+	if len(fileBytes) <= 1 {
+		log.Printf("%s is empty, skipping.", versionFileName)
+		return
+	}
+
+	fileContents := string(fileBytes)
+	re := regexp.MustCompile(`\d\.\d+\.\d`)
+	match := re.FindStringSubmatch(fileContents)
+	localDesiredVersion, _ := semver.Make(match[0])
+	log.Printf("local project wants version %s", localDesiredVersion)
+
+	// We don't want to notify users if the `Version` is "dev" as it's not
+	// actually too old. It could be that they are running non-released
+	// versions.
+	if Version != "dev" && currentIAMyVersion.LE(localDesiredVersion) {
+		fmt.Printf(versionTooOldError, currentIAMyVersion, localDesiredVersion)
+		os.Exit(1)
 	}
 }
