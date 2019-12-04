@@ -94,6 +94,15 @@ type awsSyncCmdGenerator struct {
 func (a *awsSyncCmdGenerator) deleteOldEntities() {
 	iam := newIamClient(awsSession())
 
+	for _, fromInstanceProfile := range a.from.InstanceProfiles {
+		if found, _ := a.to.FindInstanceProfileByName(fromInstanceProfile.Name, fromInstanceProfile.Path); !found {
+			for _, roleName := range fromInstanceProfile.Roles {
+				a.cmds.Add("aws", "iam", "remove-role-from-instance-profile", "--instance-profile-name", fromInstanceProfile.Name, "--role-name", roleName)
+			}
+			a.cmds.Add("aws", "iam", "delete-instance-profile",
+				"--instance-profile-name", fromInstanceProfile.Name)
+		}
+	}
 	for _, fromRole := range a.from.Roles {
 		if found, _ := a.to.FindRoleByName(fromRole.Name, fromRole.Path); !found {
 			// detach managed policies
@@ -192,15 +201,6 @@ func (a *awsSyncCmdGenerator) deleteOldEntities() {
 			}
 			a.cmds.Add("aws", "iam", "delete-policy",
 				"--policy-arn", Arn(fromPolicy, a.to.Account))
-		}
-	}
-	for _, fromInstanceProfile := range a.from.InstanceProfiles {
-		if found, _ := a.to.FindInstanceProfileByName(fromInstanceProfile.Name, fromInstanceProfile.Path); !found {
-			for _, roleName := range fromInstanceProfile.Roles {
-				a.cmds.Add("aws", "iam", "remove-role-from-instance-profile", "--instance-profile-name", fromInstanceProfile.Name, "--role-name", roleName)
-			}
-			a.cmds.Add("aws", "iam", "delete-instance-profile",
-				"--instance-profile-name", fromInstanceProfile.Name)
 		}
 	}
 }
