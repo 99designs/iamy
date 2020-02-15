@@ -30,7 +30,7 @@ func PushCommand(ui Ui, input PushCommandInput) {
 		return
 	}
 
-	dataFromAws, err := aws.Fetch()
+	dataFromAws, err := aws.Fetch(*excludeS3)
 	if err != nil {
 		ui.Fatal(err)
 		return

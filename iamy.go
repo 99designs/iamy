@@ -13,6 +13,7 @@ var (
 	Version    string = "dev"
 	defaultDir string
 	dryRun     *bool
+	excludeS3     *bool
 )
 
 type logWriter struct{ *log.Logger }
@@ -37,6 +38,7 @@ func main() {
 		push      = kingpin.Command("push", "Syncs IAM users, groups and policies from files to the active AWS account")
 		pushDir   = push.Flag("dir", "The directory to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
 	)
+	excludeS3 = kingpin.Flag("exclude-s3", "Exclude syncing of S3 buckets and policies").Bool()
 	dryRun = kingpin.Flag("dry-run", "Show what would happen, but don't prompt to do it").Bool()
 
 	kingpin.Version(Version)
