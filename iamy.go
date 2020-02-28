@@ -13,6 +13,7 @@ var (
 	Version    string = "dev"
 	defaultDir string
 	dryRun     *bool
+	excludeS3  *bool
 )
 
 type logWriter struct{ *log.Logger }
@@ -38,6 +39,7 @@ func main() {
 		pushDir   = push.Flag("dir", "The directory to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
 	)
 	dryRun = kingpin.Flag("dry-run", "Show what would happen, but don't prompt to do it").Bool()
+	excludeS3 = kingpin.Flag("exclude-s3", "Exclude S3 policies from pull or push").Bool()
 
 	kingpin.Version(Version)
 	kingpin.CommandLine.Help =

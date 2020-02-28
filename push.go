@@ -21,6 +21,7 @@ func PushCommand(ui Ui, input PushCommandInput) {
 	}
 	aws := iamy.AwsFetcher{
 		SkipFetchingPolicyAndRoleDescriptions: true,
+		ExcludeS3: *excludeS3,
 		Debug: ui.Debug,
 	}
 

@@ -19,6 +19,7 @@ type AwsFetcher struct {
 	// As Policy and Role descriptions are immutable, we can skip fetching them
 	// when pushing to AWS
 	SkipFetchingPolicyAndRoleDescriptions bool
+	ExcludeS3 bool
 
 	Debug *log.Logger
 
@@ -63,12 +64,14 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 		iamErr = a.fetchIamData()
 	}()
 
-	log.Println("Fetching S3 data")
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		s3Err = a.fetchS3Data()
-	}()
+	if !a.ExcludeS3 {
+		log.Println("Fetching S3 data")
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			s3Err = a.fetchS3Data()
+		}()
+	}
 
 	wg.Wait()
 
