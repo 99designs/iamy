@@ -48,7 +48,7 @@ func (a *AwsFetcher) init() error {
 }
 
 // Fetch queries AWS for account data
-func (a *AwsFetcher) Fetch(excludeS3 bool) (*AccountData, error) {
+func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	if err := a.init(); err != nil {
 		return nil, errors.Wrap(err, "Error in init")
 	}
@@ -63,14 +63,12 @@ func (a *AwsFetcher) Fetch(excludeS3 bool) (*AccountData, error) {
 		iamErr = a.fetchIamData()
 	}()
 
-	if !excludeS3 {
-		log.Println("Fetching S3 data")
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			s3Err = a.fetchS3Data()
-		}()
-	}
+	log.Println("Fetching S3 data")
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s3Err = a.fetchS3Data()
+	}()
 
 	wg.Wait()
 
