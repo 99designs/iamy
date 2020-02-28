@@ -18,6 +18,7 @@ type PushCommandInput struct {
 func PushCommand(ui Ui, input PushCommandInput) {
 	yaml := iamy.YamlLoadDumper{
 		Dir: input.Dir,
+		ExcludeS3: *excludeS3,
 	}
 	aws := iamy.AwsFetcher{
 		SkipFetchingPolicyAndRoleDescriptions: true,

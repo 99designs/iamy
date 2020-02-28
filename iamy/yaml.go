@@ -26,6 +26,7 @@ type pathTemplateData struct {
 // A YamlLoadDumper loads and dumps account data in yaml files
 type YamlLoadDumper struct {
 	Dir string
+	ExcludeS3 bool
 }
 
 func (a *YamlLoadDumper) getFilesRecursively() ([]string, error) {
@@ -114,9 +115,11 @@ func (a *YamlLoadDumper) Load() ([]AccountData, error) {
 				err = a.unmarshalYamlFile(fp, &profile)
 				accounts[accountid].addInstanceProfile(&profile)
 			case "s3":
-				bp := BucketPolicy{BucketName: name}
-				err = a.unmarshalYamlFile(fp, &bp)
-				accounts[accountid].addBucketPolicy(&bp)
+				if !a.ExcludeS3 {
+					bp := BucketPolicy{BucketName: name}
+					err = a.unmarshalYamlFile(fp, &bp)
+					accounts[accountid].addBucketPolicy(&bp)
+				}
 			default:
 				panic("Unexpected entity")
 			}
