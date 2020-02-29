@@ -38,7 +38,7 @@ func (a *AwsFetcher) init() error {
 	s := awsSession()
 	a.iam = newIamClient(s)
 	a.s3 = newS3Client(s)
-	if a.account, err = a.getAccount(); err != nil {
+	if a.account, err = getAccount(a); err != nil {
 		return err
 	}
 	a.data = AccountData{
@@ -396,6 +396,11 @@ func (a *AwsFetcher) getAccount() (*Account, error) {
 	}
 
 	return &acct, nil
+}
+
+// Wrapper around getAccount method to make mocking easier
+var getAccount = func (a *AwsFetcher) (*Account, error) {
+	return a.getAccount()
 }
 
 // isSkippableResource takes the resource identifier as a string and
