@@ -1,8 +1,53 @@
 package iamy
 
 import (
+	// TODO: do a mock logger
+	"log"
+	"os"
+
 	"testing"
 )
+
+
+func TestFetch(t *testing.T) {
+	var iamCalled, s3Called bool
+	fetchIamData = func (a *AwsFetcher) error {
+		iamCalled = true
+		return nil
+	}
+	fetchS3Data = func (a *AwsFetcher) error {
+		s3Called = true
+		return nil
+	}
+
+	t.Run("Fetches both IAM and S3 Data", func(t *testing.T) {
+		iamCalled = false
+		s3Called = false
+
+		a := AwsFetcher{Debug: log.New(os.Stderr, "DEBUG ", log.LstdFlags)}
+		a.Fetch()
+		if !iamCalled {
+			t.Errorf("expected IAM data to be fetched but was not")
+		}
+		if !s3Called {
+			t.Errorf("expected S3 data to be fetched but was not")
+		}
+	})
+
+	t.Run("Fetches only S3 Data when ExcludeS3 flag is set", func(t *testing.T) {
+		iamCalled = false
+		s3Called = false
+
+		a := AwsFetcher{Debug: log.New(os.Stderr, "DEBUG ", log.LstdFlags), ExcludeS3: true}
+		a.Fetch()
+		if !iamCalled {
+			t.Errorf("expected IAM data to be fetched but was not")
+		}
+		if s3Called {
+			t.Errorf("expected S3 data not to be fetched but was")
+		}
+	})
+}
 
 func TestIsSkippableManagedResource(t *testing.T) {
 	skippables := []string{
