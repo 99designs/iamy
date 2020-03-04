@@ -145,35 +145,6 @@ func (a *AwsS3Fetcher) fetch() error {
 	return nil
 }
 
-func findDefaultPolicyVersion(versions []*iam.PolicyVersion) *iam.PolicyVersion {
-	for _, version := range versions {
-		if *version.IsDefaultVersion {
-			return version
-		}
-	}
-	panic("Expected a default policy version")
-}
-
-func findNonDefaultPolicyVersionIds(versions []*iam.PolicyVersion) []string {
-	ss := []string{}
-	for _, version := range versions {
-		if !*version.IsDefaultVersion {
-			ss = append(ss, *version.VersionId)
-		}
-	}
-	return ss
-}
-
-func findOldestPolicyVersionId(versions []*iam.PolicyVersion) string {
-	oldest := versions[0]
-	for _, version := range versions[1:] {
-		if version.CreateDate.Before(*oldest.CreateDate) {
-			oldest = version
-		}
-	}
-	return *oldest.VersionId
-}
-
 // AwsAccountFetcherIface is an interface for AwsAccountFetcher
 type AwsAccountFetcherIface interface {
 	getAccount() (*Account, error)

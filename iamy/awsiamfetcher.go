@@ -252,6 +252,35 @@ func (a *AwsIamFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetails
 	return a.descriptionFetchError
 }
 
+func findDefaultPolicyVersion(versions []*iam.PolicyVersion) *iam.PolicyVersion {
+	for _, version := range versions {
+		if *version.IsDefaultVersion {
+			return version
+		}
+	}
+	panic("Expected a default policy version")
+}
+
+func findNonDefaultPolicyVersionIds(versions []*iam.PolicyVersion) []string {
+	ss := []string{}
+	for _, version := range versions {
+		if !*version.IsDefaultVersion {
+			ss = append(ss, *version.VersionId)
+		}
+	}
+	return ss
+}
+
+func findOldestPolicyVersionId(versions []*iam.PolicyVersion) string {
+	oldest := versions[0]
+	for _, version := range versions[1:] {
+		if version.CreateDate.Before(*oldest.CreateDate) {
+			oldest = version
+		}
+	}
+	return *oldest.VersionId
+}
+
 // isSkippableResource takes the resource identifier as a string and
 // checks it against known resources that we shouldn't need to manage as
 // it will already be managed by another process (such as Cloudformation
