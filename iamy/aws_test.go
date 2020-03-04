@@ -35,11 +35,12 @@ func (a *awsS3FetcherMock) fetch() error {
 
 func TestFetch(t *testing.T) {
 	logger := log.New(os.Stderr, "DEBUG ", log.LstdFlags)
-	accountFetcher := &awsAccountFetcherMock{}
-	iamFetcher := &awsIamFetcherMock{}
-	s3Fetcher := &awsS3FetcherMock{}
 
 	t.Run("Fetches both IAM and S3 Data", func(t *testing.T) {
+		accountFetcher := &awsAccountFetcherMock{}
+		iamFetcher := &awsIamFetcherMock{}
+		s3Fetcher := &awsS3FetcherMock{}
+
 		a := AwsFetcher{
 			Debug:          logger,
 			accountFetcher: accountFetcher,
@@ -56,6 +57,10 @@ func TestFetch(t *testing.T) {
 	})
 
 	t.Run("Fetches only S3 Data when ExcludeS3 flag is set", func(t *testing.T) {
+		accountFetcher := &awsAccountFetcherMock{}
+		iamFetcher := &awsIamFetcherMock{}
+		s3Fetcher := &awsS3FetcherMock{}
+
 		a := AwsFetcher{
 			Debug:          logger,
 			accountFetcher: accountFetcher,
