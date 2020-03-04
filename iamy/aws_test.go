@@ -12,15 +12,11 @@ import (
 func TestFetch(t *testing.T) {
 	var iamCalled, s3Called bool
 
-	type iamClientMock struct {
-		iamClientIface
-	}
-
 	t.Run("Fetches both IAM and S3 Data", func(t *testing.T) {
 		iamCalled = false
 		s3Called = false
 
-		a := AwsFetcher{Debug: log.New(os.Stderr, "DEBUG ", log.LstdFlags), iam: iamClientMock{}}
+		a := AwsFetcher{Debug: log.New(os.Stderr, "DEBUG ", log.LstdFlags)}
 		a.Fetch()
 		if !iamCalled {
 			t.Errorf("expected IAM data to be fetched but was not")
@@ -34,7 +30,7 @@ func TestFetch(t *testing.T) {
 		iamCalled = false
 		s3Called = false
 
-		a := AwsFetcher{Debug: log.New(os.Stderr, "DEBUG ", log.LstdFlags), ExcludeS3: true, iam: iamClientMock{}}
+		a := AwsFetcher{Debug: log.New(os.Stderr, "DEBUG ", log.LstdFlags), ExcludeS3: true}
 		a.Fetch()
 		if !iamCalled {
 			t.Errorf("expected IAM data to be fetched but was not")
