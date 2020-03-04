@@ -30,6 +30,7 @@ type AwsFetcher struct {
 
 	accountFetcher AwsAccountFetcherIface
 	iamFetcher     AwsIamFetcherIface
+	s3Fetcher      AwsS3FetcherIface
 }
 
 func (a *AwsFetcher) init() error {
@@ -42,7 +43,6 @@ func (a *AwsFetcher) init() error {
 		a.accountFetcher = &AwsAccountFetcher{iam: a.iam, Debug: a.Debug}
 	}
 
-	a.s3 = newS3Client(s)
 	if a.account, err = a.accountFetcher.getAccount(); err != nil {
 		return err
 	}
@@ -57,6 +57,15 @@ func (a *AwsFetcher) init() error {
 			Debug:                                 a.Debug,
 			data:                                  &a.data,
 			account:                               a.account,
+		}
+	}
+
+	a.s3 = newS3Client(s)
+	if a.s3Fetcher == nil {
+		a.s3Fetcher = &AwsS3Fetcher{
+			s3:    a.s3,
+			Debug: a.Debug,
+			data:  &a.data,
 		}
 	}
 
@@ -84,7 +93,7 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			s3Err = a.fetchS3Data()
+			s3Err = a.s3Fetcher.fetch()
 		}()
 	}
 
@@ -100,7 +109,19 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	return &a.data, nil
 }
 
-func (a *AwsFetcher) fetchS3Data() error {
+// AwsS3FetcherIface is an interface for AwsS3Fetcher
+type AwsS3FetcherIface interface {
+	fetch() error
+}
+
+// AwsS3Fetcher retrieves S3 data
+type AwsS3Fetcher struct {
+	s3    *s3Client
+	Debug *log.Logger
+	data  *AccountData
+}
+
+func (a *AwsS3Fetcher) fetch() error {
 	buckets, err := a.s3.listAllBuckets()
 	if err != nil {
 		return errors.Wrap(err, "Error listing buckets")

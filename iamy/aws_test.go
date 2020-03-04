@@ -24,38 +24,50 @@ func (a *awsIamFetcherMock) fetch() error {
 	return nil
 }
 
+type awsS3FetcherMock struct {
+	fetchCalled bool
+}
+
+func (a *awsS3FetcherMock) fetch() error {
+	a.fetchCalled = true
+	return nil
+}
+
 func TestFetch(t *testing.T) {
-	var s3Called bool
 	logger := log.New(os.Stderr, "DEBUG ", log.LstdFlags)
+	accountFetcher := &awsAccountFetcherMock{}
 	iamFetcher := &awsIamFetcherMock{}
+	s3Fetcher := &awsS3FetcherMock{}
 
 	t.Run("Fetches both IAM and S3 Data", func(t *testing.T) {
 		a := AwsFetcher{
-			Debug:      logger,
-			iamFetcher: iamFetcher,
+			Debug:          logger,
+			accountFetcher: accountFetcher,
+			iamFetcher:     iamFetcher,
+			s3Fetcher:      s3Fetcher,
 		}
 		a.Fetch()
 		if !iamFetcher.fetchCalled {
 			t.Errorf("expected IAM data to be fetched but was not")
 		}
-		if !s3Called {
+		if !s3Fetcher.fetchCalled {
 			t.Errorf("expected S3 data to be fetched but was not")
 		}
 	})
 
 	t.Run("Fetches only S3 Data when ExcludeS3 flag is set", func(t *testing.T) {
-		s3Called = false
-
 		a := AwsFetcher{
-			Debug:      logger,
-			iamFetcher: iamFetcher,
-			ExcludeS3:  true,
+			Debug:          logger,
+			accountFetcher: accountFetcher,
+			iamFetcher:     iamFetcher,
+			s3Fetcher:      s3Fetcher,
+			ExcludeS3:      true,
 		}
 		a.Fetch()
 		if !iamFetcher.fetchCalled {
 			t.Errorf("expected IAM data to be fetched but was not")
 		}
-		if s3Called {
+		if s3Fetcher.fetchCalled {
 			t.Errorf("expected S3 data not to be fetched but was")
 		}
 	})
