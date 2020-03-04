@@ -61,7 +61,7 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		iamErr = fetchIamData(a)
+		iamErr = a.fetchIamData()
 	}()
 
 	if !a.ExcludeS3 {
@@ -69,7 +69,7 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			s3Err = fetchS3Data(a)
+			s3Err = a.fetchS3Data()
 		}()
 	}
 
@@ -110,12 +110,6 @@ func (a *AwsFetcher) fetchS3Data() error {
 
 	return nil
 }
-
-// Wrapper around fetchS3Data method to make mocking easier
-var fetchS3Data = func (a *AwsFetcher) error {
-	return a.fetchS3Data()
-}
-
 func (a *AwsFetcher) fetchIamData() error {
 	var populateIamDataErr error
 	var populateInstanceProfileErr error
@@ -158,12 +152,6 @@ func (a *AwsFetcher) fetchIamData() error {
 		return err
 	}
 	return nil
-}
-
-
-// Wrapper around fetchIamData method to make mocking easier
-var fetchIamData = func (a *AwsFetcher) error {
-	return a.fetchIamData()
 }
 
 func (a *AwsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *[]InlinePolicy) error {
