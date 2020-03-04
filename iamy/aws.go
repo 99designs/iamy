@@ -129,11 +129,6 @@ func (a *AwsFetcher) fetchS3Data() error {
 // AwsIamFetcherIface is an interface for AwsIamFetcher
 type AwsIamFetcherIface interface {
 	fetch() error
-	populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error
-	populateInlinePolicies(source []*iam.PolicyDetail, target *[]InlinePolicy) error
-	populateInstanceProfileData(resp *iam.ListInstanceProfilesOutput) error
-	marshalRoleDescriptionAsync(roleName string, target *string)
-	marshalPolicyDescriptionAsync(policyArn string, target *string)
 }
 
 // AwsIamFetcher retrieves IAM data
