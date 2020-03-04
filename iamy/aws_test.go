@@ -10,10 +10,6 @@ import (
 
 
 func TestFetch(t *testing.T) {
-	getAccount = func (a *AwsFetcher) (*Account, error) {
-		return &Account{}, nil
-	}
-
 	var iamCalled, s3Called bool
 	fetchIamData = func (a *AwsFetcher) error {
 		iamCalled = true
