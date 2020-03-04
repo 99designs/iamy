@@ -19,7 +19,7 @@ type AwsFetcher struct {
 	// As Policy and Role descriptions are immutable, we can skip fetching them
 	// when pushing to AWS
 	SkipFetchingPolicyAndRoleDescriptions bool
-	ExcludeS3 bool
+	ExcludeS3                             bool
 
 	Debug *log.Logger
 
@@ -27,6 +27,8 @@ type AwsFetcher struct {
 	s3      *s3Client
 	account *Account
 	data    AccountData
+
+	accountFetcher *AwsAccountFetcher
 
 	descriptionFetchWaitGroup sync.WaitGroup
 	descriptionFetchError     error
@@ -36,9 +38,14 @@ func (a *AwsFetcher) init() error {
 	var err error
 
 	s := awsSession()
+
 	a.iam = newIamClient(s)
+	if a.accountFetcher == nil {
+		a.accountFetcher = &AwsAccountFetcher{iam: a.iam, Debug: a.Debug}
+	}
+
 	a.s3 = newS3Client(s)
-	if a.account, err = a.getAccount(); err != nil {
+	if a.account, err = a.accountFetcher.getAccount(); err != nil {
 		return err
 	}
 	a.data = AccountData{
@@ -363,7 +370,13 @@ func findOldestPolicyVersionId(versions []*iam.PolicyVersion) string {
 	return *oldest.VersionId
 }
 
-func (a *AwsFetcher) getAccount() (*Account, error) {
+// TODO: extract to it's own file
+type AwsAccountFetcher struct {
+	iam   *iamClient
+	Debug *log.Logger
+}
+
+func (a *AwsAccountFetcher) getAccount() (*Account, error) {
 	var err error
 	acct := Account{}
 
