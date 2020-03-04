@@ -29,9 +29,7 @@ type AwsFetcher struct {
 	data    AccountData
 
 	accountFetcher AwsAccountFetcherIface
-
-	descriptionFetchWaitGroup sync.WaitGroup
-	descriptionFetchError     error
+	iamFetcher     AwsIamFetcherIface
 }
 
 func (a *AwsFetcher) init() error {
@@ -52,6 +50,16 @@ func (a *AwsFetcher) init() error {
 		Account: a.account,
 	}
 
+	if a.iamFetcher == nil {
+		a.iamFetcher = &AwsIamFetcher{
+			SkipFetchingPolicyAndRoleDescriptions: a.SkipFetchingPolicyAndRoleDescriptions,
+			iam:                                   a.iam,
+			Debug:                                 a.Debug,
+			data:                                  &a.data,
+			account:                               a.account,
+		}
+	}
+
 	return nil
 }
 
@@ -68,7 +76,7 @@ func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		iamErr = a.fetchIamData()
+		iamErr = a.iamFetcher.fetch()
 	}()
 
 	if !a.ExcludeS3 {
@@ -117,7 +125,31 @@ func (a *AwsFetcher) fetchS3Data() error {
 
 	return nil
 }
-func (a *AwsFetcher) fetchIamData() error {
+
+// AwsIamFetcherIface is an interface for AwsIamFetcher
+type AwsIamFetcherIface interface {
+	fetch() error
+	populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error
+	populateInlinePolicies(source []*iam.PolicyDetail, target *[]InlinePolicy) error
+	populateInstanceProfileData(resp *iam.ListInstanceProfilesOutput) error
+	marshalRoleDescriptionAsync(roleName string, target *string)
+	marshalPolicyDescriptionAsync(policyArn string, target *string)
+}
+
+// AwsIamFetcher retrieves IAM data
+type AwsIamFetcher struct {
+	SkipFetchingPolicyAndRoleDescriptions bool
+
+	iam     *iamClient
+	Debug   *log.Logger
+	data    *AccountData
+	account *Account
+
+	descriptionFetchWaitGroup sync.WaitGroup
+	descriptionFetchError     error
+}
+
+func (a *AwsIamFetcher) fetch() error {
 	var populateIamDataErr error
 	var populateInstanceProfileErr error
 	err := a.iam.GetAccountAuthorizationDetailsPages(
@@ -161,7 +193,7 @@ func (a *AwsFetcher) fetchIamData() error {
 	return nil
 }
 
-func (a *AwsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *[]InlinePolicy) error {
+func (a *AwsIamFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *[]InlinePolicy) error {
 	for _, ip := range source {
 		doc, err := NewPolicyDocumentFromEncodedJson(*ip.PolicyDocument)
 		if err != nil {
@@ -176,7 +208,7 @@ func (a *AwsFetcher) populateInlinePolicies(source []*iam.PolicyDetail, target *
 	return nil
 }
 
-func (a *AwsFetcher) marshalPolicyDescriptionAsync(policyArn string, target *string) {
+func (a *AwsIamFetcher) marshalPolicyDescriptionAsync(policyArn string, target *string) {
 	a.descriptionFetchWaitGroup.Add(1)
 	go func() {
 		defer a.descriptionFetchWaitGroup.Done()
@@ -190,7 +222,7 @@ func (a *AwsFetcher) marshalPolicyDescriptionAsync(policyArn string, target *str
 	}()
 }
 
-func (a *AwsFetcher) marshalRoleDescriptionAsync(roleName string, target *string) {
+func (a *AwsIamFetcher) marshalRoleDescriptionAsync(roleName string, target *string) {
 	a.descriptionFetchWaitGroup.Add(1)
 	go func() {
 		defer a.descriptionFetchWaitGroup.Done()
@@ -204,7 +236,7 @@ func (a *AwsFetcher) marshalRoleDescriptionAsync(roleName string, target *string
 	}()
 }
 
-func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesOutput) error {
+func (a *AwsIamFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesOutput) error {
 	for _, profileResp := range resp.InstanceProfiles {
 		if ok, err := isSkippableManagedResource(*profileResp.InstanceProfileName); ok {
 			log.Printf(err)
@@ -224,7 +256,7 @@ func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesO
 	return nil
 }
 
-func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
+func (a *AwsIamFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
 	for _, userResp := range resp.UserDetailList {
 		if ok, err := isSkippableManagedResource(*userResp.UserName); ok {
 			log.Printf(err)
