@@ -8,15 +8,22 @@ import (
 	"testing"
 )
 
+type awsAccountFetcherMock struct {
+}
+
+func (a *awsAccountFetcherMock) getAccount() (*Account, error) {
+	return &Account{}, nil
+}
 
 func TestFetch(t *testing.T) {
 	var iamCalled, s3Called bool
+	logger := log.New(os.Stderr, "DEBUG ", log.LstdFlags)
 
 	t.Run("Fetches both IAM and S3 Data", func(t *testing.T) {
 		iamCalled = false
 		s3Called = false
 
-		a := AwsFetcher{Debug: log.New(os.Stderr, "DEBUG ", log.LstdFlags)}
+		a := AwsFetcher{Debug: logger, accountFetcher: &awsAccountFetcherMock{}}
 		a.Fetch()
 		if !iamCalled {
 			t.Errorf("expected IAM data to be fetched but was not")
@@ -30,7 +37,7 @@ func TestFetch(t *testing.T) {
 		iamCalled = false
 		s3Called = false
 
-		a := AwsFetcher{Debug: log.New(os.Stderr, "DEBUG ", log.LstdFlags), ExcludeS3: true}
+		a := AwsFetcher{Debug: logger, ExcludeS3: true}
 		a.Fetch()
 		if !iamCalled {
 			t.Errorf("expected IAM data to be fetched but was not")
