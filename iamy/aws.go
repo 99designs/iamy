@@ -28,7 +28,7 @@ type AwsFetcher struct {
 	account *Account
 	data    AccountData
 
-	accountFetcher *AwsAccountFetcher
+	accountFetcher AwsAccountFetcherIface
 
 	descriptionFetchWaitGroup sync.WaitGroup
 	descriptionFetchError     error
@@ -370,7 +370,12 @@ func findOldestPolicyVersionId(versions []*iam.PolicyVersion) string {
 	return *oldest.VersionId
 }
 
-// TODO: extract to it's own file
+// AwsAccountFetcherIface is an interface for AwsAccountFetcher
+type AwsAccountFetcherIface interface {
+	getAccount() (*Account, error)
+}
+
+// AwsAccountFetcher retrieves the AWS Account based on the current session
 type AwsAccountFetcher struct {
 	iam   *iamClient
 	Debug *log.Logger
