@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/blang/semver"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -96,7 +97,7 @@ func init() {
 }
 
 func performVersionChecks() {
-	currentIAMyVersion, _ := semver.Make(Version)
+	currentIAMyVersion, _ := semver.Make(strings.TrimPrefix(Version, "v"))
 	log.Printf("current version is %s", currentIAMyVersion)
 
 	fileBytes, err := ioutil.ReadFile(versionFileName)
