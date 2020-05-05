@@ -34,6 +34,7 @@ func main() {
 		pull      = kingpin.Command("pull", "Syncs IAM users, groups and policies from the active AWS account to files")
 		pullDir   = pull.Flag("dir", "The directory to dump yaml files to").Default(defaultDir).Short('d').String()
 		canDelete = pull.Flag("delete", "Delete extraneous files from destination dir").Bool()
+		lookupCfn = pull.Flag("accurate-cfn", "Fetch all known resource names from cloudformation to get exact filtering").Bool()
 		push      = kingpin.Command("push", "Syncs IAM users, groups and policies from files to the active AWS account")
 		pushDir   = push.Flag("dir", "The directory to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
 	)
@@ -68,8 +69,9 @@ func main() {
 
 	case pull.FullCommand():
 		PullCommand(ui, PullCommandInput{
-			Dir:       *pullDir,
-			CanDelete: *canDelete,
+			Dir:                  *pullDir,
+			CanDelete:            *canDelete,
+			HeuristicCfnMatching: !*lookupCfn,
 		})
 	}
 }

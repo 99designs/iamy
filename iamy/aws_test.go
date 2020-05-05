@@ -17,10 +17,12 @@ func TestIsSkippableManagedResource(t *testing.T) {
 		"myalias-123/iam/instance-profile/example.yaml",
 	}
 
+	f := AwsFetcher{cfn: &cfnClient{}}
+
 	for _, name := range skippables {
 		t.Run(name, func(t *testing.T) {
 
-			skipped, err := isSkippableManagedResource(name)
+			skipped, err := f.isSkippableManagedResource(CfnIamRole, name)
 			if skipped == false {
 				t.Errorf("expected %s to be skipped but got false", name)
 			}
@@ -34,7 +36,7 @@ func TestIsSkippableManagedResource(t *testing.T) {
 	for _, name := range nonSkippables {
 		t.Run(name, func(t *testing.T) {
 
-			skipped, err := isSkippableManagedResource(name)
+			skipped, err := f.isSkippableManagedResource(CfnIamRole, name)
 			if skipped == true {
 				t.Errorf("expected %s to not be skipped but got true", name)
 			}

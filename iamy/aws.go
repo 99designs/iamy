@@ -3,7 +3,6 @@ package iamy
 import (
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -12,18 +11,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-var cfnResourceRegexp = regexp.MustCompile(`-[A-Z0-9]{10,20}$`)
-
 // AwsFetcher fetches account data from AWS
 type AwsFetcher struct {
 	// As Policy and Role descriptions are immutable, we can skip fetching them
 	// when pushing to AWS
 	SkipFetchingPolicyAndRoleDescriptions bool
+	HeuristicCfnMatching                  bool
 
 	Debug *log.Logger
 
 	iam     *iamClient
 	s3      *s3Client
+	cfn     *cfnClient
 	account *Account
 	data    AccountData
 
@@ -37,6 +36,8 @@ func (a *AwsFetcher) init() error {
 	s := awsSession()
 	a.iam = newIamClient(s)
 	a.s3 = newS3Client(s)
+	a.cfn = newCfnClient(s)
+
 	if a.account, err = a.getAccount(); err != nil {
 		return err
 	}
@@ -51,6 +52,13 @@ func (a *AwsFetcher) init() error {
 func (a *AwsFetcher) Fetch() (*AccountData, error) {
 	if err := a.init(); err != nil {
 		return nil, errors.Wrap(err, "Error in init")
+	}
+
+	if !a.HeuristicCfnMatching {
+		log.Println("Fetching CFN data")
+		if err := a.cfn.PopulateMangedResourceData(); err != nil {
+			return nil, errors.Wrap(err, "Error fetching CFN data")
+		}
 	}
 
 	var wg sync.WaitGroup
@@ -91,6 +99,10 @@ func (a *AwsFetcher) fetchS3Data() error {
 		if b.policyJson == "" {
 			continue
 		}
+		if ok, err := a.isSkippableManagedResource(CfnS3Bucket, b.name); ok {
+			log.Printf(err)
+			continue
+		}
 
 		policyDoc, err := NewPolicyDocumentFromJson(b.policyJson)
 		if err != nil {
@@ -107,6 +119,7 @@ func (a *AwsFetcher) fetchS3Data() error {
 
 	return nil
 }
+
 func (a *AwsFetcher) fetchIamData() error {
 	var populateIamDataErr error
 	var populateInstanceProfileErr error
@@ -196,7 +209,7 @@ func (a *AwsFetcher) marshalRoleDescriptionAsync(roleName string, target *string
 
 func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesOutput) error {
 	for _, profileResp := range resp.InstanceProfiles {
-		if ok, err := isSkippableManagedResource(*profileResp.InstanceProfileName); ok {
+		if ok, err := a.isSkippableManagedResource(CfnInstanceProfile, *profileResp.InstanceProfileName); ok {
 			log.Printf(err)
 			continue
 		}
@@ -216,7 +229,7 @@ func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesO
 
 func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
 	for _, userResp := range resp.UserDetailList {
-		if ok, err := isSkippableManagedResource(*userResp.UserName); ok {
+		if ok, err := a.isSkippableManagedResource(CfnIamUser, *userResp.UserName); ok {
 			log.Printf(err)
 			continue
 		}
@@ -246,7 +259,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 	}
 
 	for _, groupResp := range resp.GroupDetailList {
-		if ok, err := isSkippableManagedResource(*groupResp.GroupName); ok {
+		if ok, err := a.isSkippableManagedResource(CfnIamGroup, *groupResp.GroupName); ok {
 			log.Printf(err)
 			continue
 		}
@@ -267,7 +280,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 	}
 
 	for _, roleResp := range resp.RoleDetailList {
-		if ok, err := isSkippableManagedResource(*roleResp.RoleName); ok {
+		if ok, err := a.isSkippableManagedResource(CfnIamRole, *roleResp.RoleName); ok {
 			log.Printf(err)
 			continue
 		}
@@ -297,7 +310,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 	}
 
 	for _, policyResp := range resp.Policies {
-		if ok, err := isSkippableManagedResource(*policyResp.PolicyName); ok {
+		if ok, err := a.isSkippableManagedResource(CfnIamPolicy, *policyResp.PolicyName); ok {
 			log.Printf(err)
 			continue
 		}
@@ -390,8 +403,8 @@ func (a *AwsFetcher) getAccount() (*Account, error) {
 //
 // Returns a boolean of whether it can be skipped and a string of the
 // reasoning why it was skipped.
-func isSkippableManagedResource(resourceIdentifier string) (bool, string) {
-	if cfnResourceRegexp.MatchString(resourceIdentifier) {
+func (a *AwsFetcher) isSkippableManagedResource(cfnType CfnResourceType, resourceIdentifier string) (bool, string) {
+	if a.cfn.IsManagedResource(cfnType, resourceIdentifier) {
 		return true, fmt.Sprintf("CloudFormation generated resource %s", resourceIdentifier)
 	}
 
