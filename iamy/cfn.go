@@ -88,6 +88,9 @@ func (c *cfnClient) PopulateMangedResourceData() error {
 				}
 
 				for _, resource := range resources.StackResourceSummaries {
+					if resource.PhysicalResourceId == nil {
+						continue
+					}
 					resType := CfnResourceType(*resource.ResourceType)
 					if resType == "AWS::IAM::ManagedPolicy" {
 						resType = CfnIamPolicy // we dont care about the distinction as they are both in the "policy" namespace
