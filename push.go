@@ -21,7 +21,7 @@ func PushCommand(ui Ui, input PushCommandInput) {
 	}
 	aws := iamy.AwsFetcher{
 		SkipFetchingPolicyAndRoleDescriptions: true,
-		Debug: ui.Debug,
+		Debug:                                 ui.Debug,
 	}
 
 	allDataFromYaml, err := yaml.Load()
@@ -66,7 +66,7 @@ func sync(yamlData iamy.AccountData, awsData *iamy.AccountData, ui Ui) {
 		return
 	}
 
-	ui.Println("Commands to push changes to AWS:\n")
+	ui.Println("Commands to push changes to AWS:")
 
 	printCommands("      ", awsCmds, ui)
 

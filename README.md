@@ -55,6 +55,12 @@ Exec all aws commands? (y/N) y
 > aws iam attach-user-policy --user-name billy.blogs --policy-arn arn:aws:iam::aws:policy/ReadOnly
 ```
 
+## Accurate cloudformation matching
+
+By default, iamy will use a simple heuristic (does it end with an ID, eg -ABCDEF1234) to determine if a given resource is managed by cloudformation. 
+
+This behaviour is good enough for some cases, but if you want slower but more accurate matching pass `--accurate-cfn`
+to enumerate all cloudformation stacks and resources to determine exactly which resources are managed. 
 
 ## Inspiration and similar tools
 - https://github.com/percolate/iamer
