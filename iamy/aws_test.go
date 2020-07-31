@@ -22,7 +22,7 @@ func TestIsSkippableManagedResource(t *testing.T) {
 	for _, name := range skippables {
 		t.Run(name, func(t *testing.T) {
 
-			skipped, err := f.isSkippableManagedResource(CfnIamRole, name)
+			skipped, err := f.isSkippableManagedResource(CfnIamRole, name, map[string]string{})
 			if skipped == false {
 				t.Errorf("expected %s to be skipped but got false", name)
 			}
@@ -36,7 +36,7 @@ func TestIsSkippableManagedResource(t *testing.T) {
 	for _, name := range nonSkippables {
 		t.Run(name, func(t *testing.T) {
 
-			skipped, err := f.isSkippableManagedResource(CfnIamRole, name)
+			skipped, err := f.isSkippableManagedResource(CfnIamRole, name, map[string]string{})
 			if skipped == true {
 				t.Errorf("expected %s to not be skipped but got true", name)
 			}
@@ -45,5 +45,31 @@ func TestIsSkippableManagedResource(t *testing.T) {
 				t.Errorf("expected %s to not output an error message but got: %s", name, err)
 			}
 		})
+	}
+}
+
+func TestSkippableTaggedResources(t *testing.T) {
+	f := AwsFetcher{cfn: &cfnClient{}}
+	skippableTags := map[string]string{"aws:cloudformation:stack-name": "my-stack"}
+
+	skipped, err := f.isSkippableManagedResource(CfnS3Bucket, "my-bucket", skippableTags)
+	if err == "" {
+		t.Errorf("expected an error message but it was empty")
+	}
+	if skipped == false {
+		t.Errorf("expected resource to be skipped but got false")
+	}
+}
+
+func TestNonSkippableTaggedResources(t *testing.T) {
+	f := AwsFetcher{cfn: &cfnClient{}}
+	nonSkippableTags := map[string]string{"Name": "blah"}
+
+	skipped, err := f.isSkippableManagedResource(CfnS3Bucket, "my-bucket", nonSkippableTags)
+	if err != "" {
+		t.Errorf("expected no error message but got: %s", err)
+	}
+	if skipped == true {
+		t.Errorf("expected resource to not be skipped but got true")
 	}
 }

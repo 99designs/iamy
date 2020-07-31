@@ -13,6 +13,7 @@ import (
 )
 
 const NoSuchBucketPolicyErrCode = "NoSuchBucketPolicy"
+const NoSuchTagSetErrCode = "NoSuchTagSet"
 
 func newRegionClientMap(s *session.Session) *regionClientMap {
 	return &regionClientMap{
@@ -62,6 +63,7 @@ type bucket struct {
 	name       string
 	policyJson string
 	exists     bool
+	tags       map[string]string
 }
 
 func (c *s3Client) withRegion(region string) s3iface.S3API {
@@ -86,6 +88,13 @@ func (c *s3Client) populateBucket(b *bucket) error {
 	}
 
 	region := s3.NormalizeBucketLocation(normaliseString(r.LocationConstraint))
+
+	tags, err := c.fetchTags(b.name, region)
+	if err != nil {
+		return err
+	}
+	b.tags = tags
+
 	b.policyJson, err = c.GetBucketPolicyDoc(b.name, region)
 
 	return err
@@ -103,6 +112,7 @@ func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 
 	for _, rb := range bucketListResp.Buckets {
 		b := bucket{name: *rb.Name}
+		b.exists = true
 		buckets = append(buckets, &b)
 
 		wg.Add(1)
@@ -115,8 +125,6 @@ func (c *s3Client) listAllBuckets() ([]*bucket, error) {
 						oneOfTheErrorsDuringPopulation = errors.New(fmt.Sprintf("Error while getting details for S3 bucket %s: %s", b.name, err))
 					}
 				}
-			} else {
-				b.exists = true
 			}
 		}()
 	}
@@ -152,4 +160,24 @@ func (c *s3Client) GetBucketPolicyDoc(name, region string) (string, error) {
 	}
 
 	return *resp.Policy, nil
+}
+
+func (c *s3Client) fetchTags(name, region string) (map[string]string, error) {
+	tags := make(map[string]string)
+	clientForRegion := c.withRegion(region)
+	tagsResponse, err := clientForRegion.GetBucketTagging(&s3.GetBucketTaggingInput{Bucket: aws.String(name)})
+	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+			if awsErr.Code() == NoSuchTagSetErrCode {
+				return tags, nil
+			}
+		}
+		return tags, err
+	}
+	for _, tag := range tagsResponse.TagSet {
+		if tag != nil {
+			tags[*tag.Key] = *tag.Value
+		}
+	}
+	return tags, nil
 }
