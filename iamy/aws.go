@@ -229,7 +229,12 @@ func (a *AwsFetcher) populateInstanceProfileData(resp *iam.ListInstanceProfilesO
 
 func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOutput) error {
 	for _, userResp := range resp.UserDetailList {
-		if ok, err := a.isSkippableManagedResource(CfnIamUser, *userResp.UserName, map[string]string{}); ok {
+		tags := make(map[string]string)
+		for _, tag := range userResp.Tags {
+			tags[*tag.Key] = *tag.Value
+		}
+
+		if ok, err := a.isSkippableManagedResource(CfnIamUser, *userResp.UserName, tags); ok {
 			log.Printf(err)
 			continue
 		}
@@ -239,7 +244,6 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 				Name: *userResp.UserName,
 				Path: *userResp.Path,
 			},
-			Tags: make(map[string]string),
 		}
 
 		for _, g := range userResp.GroupList {
@@ -251,9 +255,7 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 		if err := a.populateInlinePolicies(userResp.UserPolicyList, &user.InlinePolicies); err != nil {
 			return err
 		}
-		for _, t := range userResp.Tags {
-			user.Tags[*t.Key] = *t.Value
-		}
+		user.Tags = tags
 
 		a.data.Users = append(a.data.Users, &user)
 	}
@@ -280,7 +282,12 @@ func (a *AwsFetcher) populateIamData(resp *iam.GetAccountAuthorizationDetailsOut
 	}
 
 	for _, roleResp := range resp.RoleDetailList {
-		if ok, err := a.isSkippableManagedResource(CfnIamRole, *roleResp.RoleName, map[string]string{}); ok {
+		tags := make(map[string]string)
+		for _, tag := range roleResp.Tags {
+			tags[*tag.Key] = *tag.Value
+		}
+
+		if ok, err := a.isSkippableManagedResource(CfnIamRole, *roleResp.RoleName, tags); ok {
 			log.Printf(err)
 			continue
 		}

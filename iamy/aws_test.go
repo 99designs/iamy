@@ -2,6 +2,8 @@ package iamy
 
 import (
 	"testing"
+
+	"github.com/aws/aws-sdk-go/service/iam"
 )
 
 func TestIsSkippableManagedResource(t *testing.T) {
@@ -48,7 +50,7 @@ func TestIsSkippableManagedResource(t *testing.T) {
 	}
 }
 
-func TestSkippableTaggedResources(t *testing.T) {
+func TestSkippableS3TaggedResources(t *testing.T) {
 	f := AwsFetcher{cfn: &cfnClient{}}
 	skippableTags := map[string]string{"aws:cloudformation:stack-name": "my-stack"}
 
@@ -71,5 +73,43 @@ func TestNonSkippableTaggedResources(t *testing.T) {
 	}
 	if skipped == true {
 		t.Errorf("expected resource to not be skipped but got true")
+	}
+}
+
+func TestSkippableIAMUserResource(t *testing.T) {
+	f := AwsFetcher{cfn: &cfnClient{}}
+	key := "aws:cloudformation:stack-name"
+	val := "my-stack"
+	userName := "my-user"
+	path := "/"
+	userList := []*iam.UserDetail{
+		{Tags: []*iam.Tag{{Key: &key, Value: &val}}, UserName: &userName, Path: &path},
+	}
+
+	resp := iam.GetAccountAuthorizationDetailsOutput{UserDetailList: userList}
+	f.populateIamData(&resp)
+	for _, user := range f.data.Users {
+		if user.Name == userName {
+			t.Error("Expected to skip user with CFN tags")
+		}
+	}
+}
+
+func TestSkippableIAMRoleResource(t *testing.T) {
+	f := AwsFetcher{cfn: &cfnClient{}}
+	key := "aws:cloudformation:stack-name"
+	val := "my-stack"
+	roleName := "my-role"
+	path := "/"
+	roleList := []*iam.RoleDetail{
+		{Tags: []*iam.Tag{{Key: &key, Value: &val}}, RoleName: &roleName, Path: &path},
+	}
+
+	resp := iam.GetAccountAuthorizationDetailsOutput{RoleDetailList: roleList}
+	f.populateIamData(&resp)
+	for _, role := range f.data.Roles {
+		if role.Name == roleName {
+			t.Error("Expected to skip role with CFN tags")
+		}
 	}
 }
