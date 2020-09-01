@@ -7,6 +7,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 )
 
+type iamClientiface interface {
+	iamiface.IAMAPI
+	getPolicyDescription(string) (string, error)
+	getRoleDescription(string) (string, error)
+	MustGetSecurityCredsForUser(string) ([]string, []string, bool)
+}
+
 type iamClient struct {
 	iamiface.IAMAPI
 }
