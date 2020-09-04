@@ -10,10 +10,11 @@ type PullCommandInput struct {
 	Dir                  string
 	CanDelete            bool
 	HeuristicCfnMatching bool
+	SkipCfnTagged        bool
 }
 
 func PullCommand(ui Ui, input PullCommandInput) {
-	aws := iamy.AwsFetcher{Debug: ui.Debug, HeuristicCfnMatching: input.HeuristicCfnMatching}
+	aws := iamy.AwsFetcher{Debug: ui.Debug, HeuristicCfnMatching: input.HeuristicCfnMatching, SkipCfnTagged: input.SkipCfnTagged}
 	data, err := aws.Fetch()
 	if err != nil {
 		ui.Error.Fatal(fmt.Printf("%s", err))

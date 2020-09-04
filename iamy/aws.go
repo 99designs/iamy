@@ -17,6 +17,7 @@ type AwsFetcher struct {
 	// when pushing to AWS
 	SkipFetchingPolicyAndRoleDescriptions bool
 	HeuristicCfnMatching                  bool
+	SkipCfnTagged                         bool
 
 	Debug *log.Logger
 
@@ -416,8 +417,10 @@ const cloudformationStackNameTag = "aws:cloudformation:stack-name"
 // reasoning why it was skipped.
 
 func (a *AwsFetcher) isSkippableManagedResource(cfnType CfnResourceType, resourceIdentifier string, tags map[string]string) (bool, string) {
-	if stackName, ok := tags[cloudformationStackNameTag]; ok {
-		return true, fmt.Sprintf("CloudFormation generated resource %s in stack %s", resourceIdentifier, stackName)
+	if a.SkipCfnTagged {
+		if stackName, ok := tags[cloudformationStackNameTag]; ok {
+			return true, fmt.Sprintf("CloudFormation generated resource %s in stack %s", resourceIdentifier, stackName)
+		}
 	}
 
 	if a.cfn.IsManagedResource(cfnType, resourceIdentifier) {

@@ -51,7 +51,7 @@ func TestIsSkippableManagedResource(t *testing.T) {
 }
 
 func TestSkippableS3TaggedResources(t *testing.T) {
-	f := AwsFetcher{cfn: &cfnClient{}}
+	f := AwsFetcher{cfn: &cfnClient{}, SkipCfnTagged: true}
 	skippableTags := map[string]string{"aws:cloudformation:stack-name": "my-stack"}
 
 	skipped, err := f.isSkippableManagedResource(CfnS3Bucket, "my-bucket", skippableTags)
@@ -63,8 +63,21 @@ func TestSkippableS3TaggedResources(t *testing.T) {
 	}
 }
 
+func TestSkippableS3TaggedResources_WithSkipFalse(t *testing.T) {
+	f := AwsFetcher{cfn: &cfnClient{}, SkipCfnTagged: false}
+	skippableTags := map[string]string{"aws:cloudformation:stack-name": "my-stack"}
+
+	skipped, err := f.isSkippableManagedResource(CfnS3Bucket, "my-bucket", skippableTags)
+	if err != "" {
+		t.Errorf("expected no error message but it was " + err)
+	}
+	if skipped == true {
+		t.Errorf("expected resource to not be skipped but got true")
+	}
+}
+
 func TestNonSkippableTaggedResources(t *testing.T) {
-	f := AwsFetcher{cfn: &cfnClient{}}
+	f := AwsFetcher{cfn: &cfnClient{}, SkipCfnTagged: true}
 	nonSkippableTags := map[string]string{"Name": "blah"}
 
 	skipped, err := f.isSkippableManagedResource(CfnS3Bucket, "my-bucket", nonSkippableTags)
@@ -77,7 +90,7 @@ func TestNonSkippableTaggedResources(t *testing.T) {
 }
 
 func TestSkippableIAMUserResource(t *testing.T) {
-	f := AwsFetcher{cfn: &cfnClient{}}
+	f := AwsFetcher{cfn: &cfnClient{}, SkipCfnTagged: true}
 	key := "aws:cloudformation:stack-name"
 	val := "my-stack"
 	userName := "my-user"
@@ -95,8 +108,32 @@ func TestSkippableIAMUserResource(t *testing.T) {
 	}
 }
 
+func TestSkippableIAMUserResource_WithSkipFalse(t *testing.T) {
+	f := AwsFetcher{cfn: &cfnClient{}, SkipCfnTagged: false}
+	key := "aws:cloudformation:stack-name"
+	val := "my-stack"
+	userName := "my-user"
+	path := "/"
+	userList := []*iam.UserDetail{
+		{Tags: []*iam.Tag{{Key: &key, Value: &val}}, UserName: &userName, Path: &path},
+	}
+
+	resp := iam.GetAccountAuthorizationDetailsOutput{UserDetailList: userList}
+	f.populateIamData(&resp)
+	foundUser := false
+	for _, user := range f.data.Users {
+		if user.Name == userName {
+			foundUser = true
+		}
+	}
+
+	if !foundUser {
+		t.Error("Expected to not skip user with CFN tags when SkipCfnTagged: false")
+	}
+}
+
 func TestSkippableIAMRoleResource(t *testing.T) {
-	f := AwsFetcher{cfn: &cfnClient{}}
+	f := AwsFetcher{cfn: &cfnClient{}, SkipCfnTagged: true}
 	key := "aws:cloudformation:stack-name"
 	val := "my-stack"
 	roleName := "my-role"
@@ -111,5 +148,29 @@ func TestSkippableIAMRoleResource(t *testing.T) {
 		if role.Name == roleName {
 			t.Error("Expected to skip role with CFN tags")
 		}
+	}
+}
+
+func TestSkippableIAMRoleResource_WithSkipFalse(t *testing.T) {
+	f := AwsFetcher{cfn: &cfnClient{}, SkipCfnTagged: false, SkipFetchingPolicyAndRoleDescriptions: true}
+	key := "aws:cloudformation:stack-name"
+	val := "my-stack"
+	roleName := "my-role"
+	path := "/"
+	str := "{}"
+	roleList := []*iam.RoleDetail{
+		{Tags: []*iam.Tag{{Key: &key, Value: &val}}, RoleName: &roleName, Path: &path, AssumeRolePolicyDocument: &str},
+	}
+
+	resp := iam.GetAccountAuthorizationDetailsOutput{RoleDetailList: roleList}
+	f.populateIamData(&resp)
+	foundRole := false
+	for _, role := range f.data.Roles {
+		if role.Name == roleName {
+			foundRole = true
+		}
+	}
+	if !foundRole {
+		t.Error("Expected to not skip role with CFN tags and SkipCfnTagged: false")
 	}
 }

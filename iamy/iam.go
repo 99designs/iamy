@@ -27,7 +27,7 @@ func (c *iamClient) getPolicyDescription(arn string) (string, error) {
 
 func (c *iamClient) getRoleDescription(name string) (string, error) {
 	resp, err := c.GetRole(&iam.GetRoleInput{RoleName: &name})
-	if err == nil && resp.Role.Description != nil {
+	if err == nil && resp.Role != nil && resp.Role.Description != nil {
 		return *resp.Role.Description, nil
 	}
 	return "", err
