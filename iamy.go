@@ -41,7 +41,7 @@ func main() {
 		canDelete     = pull.Flag("delete", "Delete extraneous files from destination dir").Bool()
 		lookupCfn     = pull.Flag("accurate-cfn", "Fetch all known resource names from cloudformation to get exact filtering").Bool()
 		skipCfnTagged = pull.Flag("skip-cfn-tagged", fmt.Sprintf("Shorthand for --skip-tagged %s", cloudformationStackNameTag)).Bool()
-		skipTagged    = pull.Flag("skip-tagged", "Skips entities or associated entities (buckets for bucket policies) tagged with a given tag").Strings()
+		skipTagged    = pull.Flag("skip-tagged", "Skips IAM entities (or buckets associated with bucket policies) tagged with a given tag").Strings()
 		push          = kingpin.Command("push", "Syncs IAM users, groups and policies from files to the active AWS account")
 		pushDir       = push.Flag("dir", "The directory to load yaml files from").Default(defaultDir).Short('d').ExistingDir()
 	)
