@@ -4,7 +4,7 @@ IAMy is a tool for dumping and loading your AWS IAM configuration into YAML file
 
 This allows you to use an [Infrastructure as Code](https://en.wikipedia.org/wiki/Infrastructure_as_Code) model to manage your IAM configuration. For example, you might use a github repo with a pull request model for changes to IAM config.
 
-# Origins
+# Envato Notes
 
 This code was developed by 99designs ([origin upstream](https://github.com/99designs/iamy.git)).
 Envato has created it's own fork to enable us to tailor it to our needs as it appears to not be under active development as at May 2021.
@@ -12,7 +12,7 @@ Envato has created it's own fork to enable us to tailor it to our needs as it ap
 This code is currently being maintained by Q-Branch, however this will transition to platform infrastructure shortly.
 Contributions from all parts of the company are welcomed, sing out in #github-administration for access (currently the Envato-Developers team has write access)
 
-NOTE: THIS IS A PUBLIC REPOSITORY, DO NOT COMMIT ANYTHING SENSITIVE
+**NOTE: THIS IS A PUBLIC REPOSITORY, DO NOT COMMIT ANYTHING SENSITIVE**
 
 
 ## How it works
