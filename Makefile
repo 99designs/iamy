@@ -1,5 +1,5 @@
 export GO111MODULE=on
-VERSION="$(shell git describe --tags --candidates=1 --dirty)-envato"
+VERSION="$(shell git describe --tags --candidates=1 --dirty)+envato"
 FLAGS=-X main.Version=$(VERSION) -s -w
 
 # To create a new release:
